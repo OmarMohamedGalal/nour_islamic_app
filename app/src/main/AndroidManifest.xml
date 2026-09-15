@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:name=".NoorApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MyApplication">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Deep link filters for widgets and notifications -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="noor" />
+            </intent-filter>
+        </activity>
+
+        <!-- Adhan Alarm & Boot Receivers -->
+        <receiver
+            android:name=".receiver.AdhanAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 10+ Home Screen Widgets -->
+        <!-- 1. Next Prayer Countdown Widget -->
+        <receiver
+            android:name=".widget.NextPrayerWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_next_prayer">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_prayer_info" />
+        </receiver>
+
+        <!-- 2. Full Day Prayer Times Widget -->
+        <receiver
+            android:name=".widget.FullScheduleWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_full_schedule">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_full_schedule_info" />
+        </receiver>
+
+        <!-- 3. Hijri Date Widget -->
+        <receiver
+            android:name=".widget.HijriDateWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_hijri_date">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_hijri_date_info" />
+        </receiver>
+
+        <!-- 4. Qibla Direction Widget -->
+        <receiver
+            android:name=".widget.QiblaWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_qibla">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_qibla_info" />
+        </receiver>
+
+        <!-- 5. Quran Continue Reading Widget -->
+        <receiver
+            android:name=".widget.QuranContinueWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quran">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quran_info" />
+        </receiver>
+
+        <!-- 6. Azkar Quick Counter Widget -->
+        <receiver
+            android:name=".widget.AzkarCounterWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_azkar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.noor.ACTION_AZKAR_INCREMENT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_azkar_info" />
+        </receiver>
+
+        <!-- 7. Duaa of the Day Widget -->
+        <receiver
+            android:name=".widget.DuaaOfTheDayWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_duaa">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_duaa_info" />
+        </receiver>
+
+        <!-- 8. Ramadan Countdown Widget -->
+        <receiver
+            android:name=".widget.RamadanCountdownWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_ramadan">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ramadan_info" />
+        </receiver>
+
+        <!-- 9. Islamic Holiday Countdown Widget -->
+        <receiver
+            android:name=".widget.IslamicHolidayWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_holiday">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_holiday_info" />
+        </receiver>
+
+        <!-- 10. Prayer Streak Widget -->
+        <receiver
+            android:name=".widget.PrayerStreakWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_prayer_streak">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_prayer_streak_info" />
+        </receiver>
+
+        <!-- 11. Horizontal Prayer Bar Widget (Image 1) -->
+        <receiver
+            android:name=".widget.PrayerBarWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_prayer_bar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_prayer_bar_info" />
+        </receiver>
+
+        <!-- 12. Quran Verse of the Day Widget with Tap-to-Change (Image 2) -->
+        <receiver
+            android:name=".widget.QuranVerseWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quran_verse">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.noor.ACTION_NEXT_AYAH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quran_verse_info" />
+        </receiver>
+
+        <!-- 13. Compact Prayer List Widget (Image 3) -->
+        <receiver
+            android:name=".widget.PrayerListWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_prayer_list">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_prayer_list_info" />
+        </receiver>
+
+        <!-- 14. Next Prayer Arabic Banner Widget (Image 4) -->
+        <receiver
+            android:name=".widget.NextPrayerArabicWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_next_prayer_arabic">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_prayer_arabic_info" />
+        </receiver>
+
+        <!-- Periodic & Time-Based Widget Updater Receiver -->
+        <receiver
+            android:name=".widget.WidgetAlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.noor.ACTION_UPDATE_WIDGETS" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

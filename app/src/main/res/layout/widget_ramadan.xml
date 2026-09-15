@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_card"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/widget_ramadan_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RAMADAN HUB"
+        android:textColor="#888888"
+        android:textSize="10sp"
+        android:letterSpacing="0.1"
+        android:textStyle="bold" />
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/widget_ramadan_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UNTIL IFTAR"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_ramadan_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3h 18m"
+        android:textColor="#FFFFFF"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_ramadan_target_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Maghrib at 6:32 PM"
+        android:textColor="#888888"
+        android:textSize="11sp" />
+
+</LinearLayout>

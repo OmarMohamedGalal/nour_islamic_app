@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_card"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NEXT OCCASION"
+        android:textColor="#888888"
+        android:textSize="10sp"
+        android:letterSpacing="0.1"
+        android:textStyle="bold" />
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/widget_holiday_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Eid al-Fitr"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_holiday_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="in 16 days"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_holiday_hijri"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1 Shawwal 1446 AH"
+        android:textColor="#888888"
+        android:textSize="11sp" />
+
+</LinearLayout>

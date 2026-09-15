@@ -1,0 +1,6 @@
+{
+  "name": "Noor",
+  "description": "High-contrast Islamic companion app featuring accurate prayer times, adhan notifications, Holy Quran reader with audio, tactile azkar counter, categorized duaa library, Qibla compass, regional Hijri calendar calibration, and 14 home screen widgets with tap interactions and time-based auto-refresh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

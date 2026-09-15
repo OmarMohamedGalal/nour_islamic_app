@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_card_pill"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
+
+    <!-- Fajr -->
+    <LinearLayout
+        android:id="@+id/col_bar_fajr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/dot_bar_fajr"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginBottom="6dp"
+            android:contentDescription="Active indicator"
+            android:src="@drawable/ic_dot_active" />
+
+        <TextView
+            android:id="@+id/name_bar_fajr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:text="Fajr"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/time_bar_fajr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="05:11"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Dhuhr -->
+    <LinearLayout
+        android:id="@+id/col_bar_dhuhr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/dot_bar_dhuhr"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginBottom="6dp"
+            android:contentDescription="Active indicator"
+            android:src="@drawable/ic_dot_inactive" />
+
+        <TextView
+            android:id="@+id/name_bar_dhuhr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:text="Dhuhr"
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/time_bar_dhuhr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:50"
+            android:textColor="#8E8E93"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Asr -->
+    <LinearLayout
+        android:id="@+id/col_bar_asr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/dot_bar_asr"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginBottom="6dp"
+            android:contentDescription="Active indicator"
+            android:src="@drawable/ic_dot_inactive" />
+
+        <TextView
+            android:id="@+id/name_bar_asr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:text="Asr"
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/time_bar_asr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="04:21"
+            android:textColor="#8E8E93"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Maghrib -->
+    <LinearLayout
+        android:id="@+id/col_bar_maghrib"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/dot_bar_maghrib"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginBottom="6dp"
+            android:contentDescription="Active indicator"
+            android:src="@drawable/ic_dot_inactive" />
+
+        <TextView
+            android:id="@+id/name_bar_maghrib"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:text="Maghrib"
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/time_bar_maghrib"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="07:00"
+            android:textColor="#8E8E93"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Isha -->
+    <LinearLayout
+        android:id="@+id/col_bar_isha"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/dot_bar_isha"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginBottom="6dp"
+            android:contentDescription="Active indicator"
+            android:src="@drawable/ic_dot_inactive" />
+
+        <TextView
+            android:id="@+id/name_bar_isha"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:text="Isha"
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/time_bar_isha"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="08:18"
+            android:textColor="#8E8E93"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>

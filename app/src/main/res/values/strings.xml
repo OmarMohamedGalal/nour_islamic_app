@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Noor</string>
+    <string name="app_name_ar">نور</string>
+
+    <!-- Navigation -->
+    <string name="nav_now">Now</string>
+    <string name="nav_prayer">Prayer</string>
+    <string name="nav_qibla">Qibla</string>
+    <string name="nav_quran">Quran</string>
+    <string name="nav_config">Config</string>
+
+    <!-- Widget labels -->
+    <string name="widget_next_prayer">Noor: Next Prayer Countdown</string>
+    <string name="widget_full_schedule">Noor: Daily Prayer Schedule</string>
+    <string name="widget_hijri_date">Noor: Hijri Calendar Date</string>
+    <string name="widget_qibla">Noor: Qibla Compass</string>
+    <string name="widget_quran">Noor: Continue Quran</string>
+    <string name="widget_azkar">Noor: Azkar Quick Counter</string>
+    <string name="widget_duaa">Noor: Duaa of the Day</string>
+    <string name="widget_ramadan">Noor: Ramadan Countdown</string>
+    <string name="widget_holiday">Noor: Islamic Holiday</string>
+    <string name="widget_prayer_streak">Noor: Prayer Tracker Streak</string>
+    <string name="widget_prayer_bar">Noor: Horizontal Prayer Bar</string>
+    <string name="widget_quran_verse">Noor: Quran Verse of the Day</string>
+    <string name="widget_prayer_list">Noor: Compact Prayer Times</string>
+    <string name="widget_next_prayer_arabic">Noor: Next Prayer Arabic Banner</string>
+</resources>
