@@ -1,8 +1,12 @@
 package com.example.data.repository
 
+import android.content.Context
+import com.example.NoorApplication
 import com.example.data.model.Ayah
 import com.example.data.model.RevelationType
 import com.example.data.model.Surah
+import org.json.JSONObject
+import java.util.concurrent.ConcurrentHashMap
 
 object QuranRepository {
 
@@ -123,7 +127,64 @@ object QuranRepository {
         Surah(114, "An-Nas", "الناس", "Mankind", RevelationType.MECCAN, 6, 30)
     )
 
-    fun getAyahsForSurah(surahNumber: Int): List<Ayah> {
+    private var jsonRoot: JSONObject? = null
+    private val surahCache = ConcurrentHashMap<Int, List<Ayah>>()
+
+    private val bismillahRegex = Regex("^ب[َِّ]*سْمِ\\s+ٱللَّ?ّ?هِ\\s+ٱلرَّ?ّ?حْمَٰ?نِ\\s+ٱلرَّ?ّ?حِيمِ\\s*")
+
+    private fun cleanVerseText(surahNumber: Int, verseNumber: Int, rawArabic: String): String {
+        if (surahNumber > 1 && verseNumber == 1) {
+            return bismillahRegex.replace(rawArabic, "").trim()
+        }
+        return rawArabic
+    }
+
+    fun getAyahsForSurah(surahNumber: Int, context: Context? = null): List<Ayah> {
+        surahCache[surahNumber]?.let { return it }
+
+        try {
+            val ctx = context ?: try { NoorApplication.instance } catch (e: Exception) { null }
+            val root = jsonRoot ?: run {
+                if (ctx != null) {
+                    val jsonStr = ctx.assets.open("quran_complete.json").bufferedReader().use { it.readText() }
+                    val parsed = JSONObject(jsonStr)
+                    jsonRoot = parsed
+                    parsed
+                } else null
+            }
+
+            val key = surahNumber.toString()
+            if (root != null && root.has(key)) {
+                val array = root.getJSONArray(key)
+                val list = ArrayList<Ayah>(array.length())
+                val surah = SURAHS.firstOrNull { it.number == surahNumber } ?: SURAHS[0]
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    val vNum = item.getInt("n")
+                    val arText = cleanVerseText(surahNumber, vNum, item.getString("a"))
+                    val enText = item.getString("e")
+                    list.add(
+                        Ayah(
+                            surahNumber = surahNumber,
+                            verseNumber = vNum,
+                            arabicText = arText,
+                            englishTranslation = enText,
+                            transliteration = "Ayah $vNum min Surah ${surah.nameEn}",
+                            audioUrl = String.format("https://everyayah.com/data/Alafasy_128kbps/%03d%03d.mp3", surahNumber, vNum)
+                        )
+                    )
+                }
+                surahCache[surahNumber] = list
+                return list
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return getFallbackAyahs(surahNumber)
+    }
+
+    private fun getFallbackAyahs(surahNumber: Int): List<Ayah> {
         return when (surahNumber) {
             1 -> listOf(
                 Ayah(1, 1, "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "In the name of Allah, the Entirely Merciful, the Especially Merciful.", "Bismillaahir-Rahmaanir-Raheem", "https://everyayah.com/data/Alafasy_128kbps/001001.mp3"),

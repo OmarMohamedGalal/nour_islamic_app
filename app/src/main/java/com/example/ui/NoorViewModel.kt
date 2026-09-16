@@ -335,7 +335,7 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     // QURAN ACTIONS
     fun loadSurah(surahNumber: Int, targetVerse: Int = 1) {
         val surah = QuranRepository.SURAHS.firstOrNull { it.number == surahNumber } ?: QuranRepository.SURAHS[0]
-        val ayahs = QuranRepository.getAyahsForSurah(surahNumber)
+        val ayahs = QuranRepository.getAyahsForSurah(surahNumber, getApplication())
         _uiState.update {
             it.copy(
                 selectedSurah = surah,
