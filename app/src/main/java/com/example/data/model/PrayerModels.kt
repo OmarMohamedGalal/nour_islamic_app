@@ -13,6 +13,38 @@ enum class PrayerType(val displayNameEn: String, val displayNameAr: String) {
     QIYAM("Qiyam", "قيام الليل")
 }
 
+enum class NotificationSoundOption(
+    val id: String,
+    val titleAr: String,
+    val titleEn: String,
+    val descriptionAr: String,
+    val descriptionEn: String
+) {
+    CALM_PRAYER(
+        id = "calm_prayer",
+        titleAr = "محمد م. جويدة «اقتربت صلاة...»",
+        titleEn = "Muhammad M. Gowaida Voice Alert",
+        descriptionAr = "تسجيل هادئ بصوت محمد م. جويدة لجميع الصلوات (الفجر، الظهر، العصر، المغرب، العشاء، والجمعة)",
+        descriptionEn = "Calm voice notification by Muhammad M. Gowaida for all prayers (Fajr, Dhuhr, Asr, Maghrib, Isha, and Friday Jumu'ah)"
+    ),
+    PHONE_DEFAULT(
+        id = "phone_default",
+        titleAr = "صوت الهاتف الافتراضي",
+        titleEn = "Phone Default Sound",
+        descriptionAr = "نغمة الإشعارات الرسمية الافتراضية للجهاز",
+        descriptionEn = "Default system notification ringtone"
+    );
+
+    companion object {
+        fun fromId(id: String?): NotificationSoundOption {
+            return when (id?.lowercase()) {
+                "phone_default", "default", "system" -> PHONE_DEFAULT
+                else -> CALM_PRAYER
+            }
+        }
+    }
+}
+
 data class SinglePrayerTime(
     val type: PrayerType,
     val time: LocalTime,
@@ -67,6 +99,25 @@ data class DayPrayerSchedule(
         val diffSeconds = java.time.Duration.between(currentTime, LocalTime.MAX).seconds +
                 java.time.Duration.between(LocalTime.MIN, fajr).seconds
         return NextPrayerResult(prayers.first().copy(isNext = true), diffSeconds)
+    }
+
+    fun getNextObligatoryPrayer(currentTime: LocalTime = LocalTime.now()): NextPrayerResult {
+        val obligatory = listOf(
+            SinglePrayerTime(PrayerType.FAJR, fajr),
+            SinglePrayerTime(PrayerType.DHUHR, dhuhr),
+            SinglePrayerTime(PrayerType.ASR, asr),
+            SinglePrayerTime(PrayerType.MAGHRIB, maghrib),
+            SinglePrayerTime(PrayerType.ISHA, isha)
+        )
+        for (p in obligatory) {
+            if (p.time.isAfter(currentTime)) {
+                val diffSeconds = java.time.Duration.between(currentTime, p.time).seconds
+                return NextPrayerResult(p.copy(isNext = true), diffSeconds)
+            }
+        }
+        val diffSeconds = java.time.Duration.between(currentTime, LocalTime.MAX).seconds +
+                java.time.Duration.between(LocalTime.MIN, fajr).seconds
+        return NextPrayerResult(obligatory.first().copy(isNext = true), diffSeconds)
     }
 }
 

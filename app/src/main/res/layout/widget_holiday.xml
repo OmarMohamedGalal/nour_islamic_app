@@ -43,7 +43,6 @@
         android:id="@+id/widget_holiday_hijri"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1 Shawwal 1446 AH"
         android:textColor="#888888"
         android:textSize="11sp" />
 

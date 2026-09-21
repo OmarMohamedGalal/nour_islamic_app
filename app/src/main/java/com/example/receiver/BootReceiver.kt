@@ -17,6 +17,8 @@ class BootReceiver : BroadcastReceiver() {
         ) {
             NotificationHelper.createNotificationChannels(context)
             AdhanAlarmScheduler.scheduleNextPrayers(context)
+            com.example.widget.WidgetUpdater.updateAllWidgets(context)
+            com.example.widget.WidgetUpdater.schedulePeriodicUpdates(context)
         }
     }
 }

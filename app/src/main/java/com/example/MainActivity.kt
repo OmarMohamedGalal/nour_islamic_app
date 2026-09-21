@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.receiver.AdhanAlarmScheduler
 import com.example.receiver.NotificationHelper
@@ -39,6 +40,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+
         // Notification channels & alarm scheduler
         NotificationHelper.createNotificationChannels(this)
         AdhanAlarmScheduler.scheduleNextPrayers(this)
@@ -55,8 +67,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(VoidBlack),
-                    containerColor = VoidBlack,
+                        .background(com.example.ui.theme.AmbientBackgroundGradient),
+                    containerColor = Color.Transparent,
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     bottomBar = {
                         NoorBottomNavBar(

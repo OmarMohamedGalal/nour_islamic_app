@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -96,7 +97,7 @@ fun AzkarScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VoidBlack)
+            .background(Color.Transparent)
             .padding(horizontal = 16.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -144,19 +145,29 @@ fun AzkarScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // CATEGORIES CAROUSEL
+        // CATEGORIES CAROUSEL - Frosted Glass Tabs
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(AzkarCategory.entries) { cat ->
                 val isSelected = cat == uiState.selectedAzkarCategory
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) PureWhite else SurfaceCard,
-                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, BorderOutline),
+                val shape = RoundedCornerShape(20.dp)
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(shape)
+                        .then(
+                            if (isSelected) {
+                                Modifier
+                                    .background(WhiteSilverGradient)
+                                    .border(1.dp, PureWhite, shape)
+                            } else {
+                                Modifier
+                                    .background(GlassDarkBase)
+                                    .background(GlassGradientCard)
+                                    .border(1.dp, GlassBorderBrushSubtle, shape)
+                            }
+                        )
                         .clickable {
                             view.performHapticFeedback(
                                 HapticFeedbackConstants.KEYBOARD_TAP,
@@ -164,15 +175,16 @@ fun AzkarScreen(
                             )
                             viewModel.setAzkarCategory(cat)
                         }
-                        .testTag("azkar_cat_${cat.id}")
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .testTag("azkar_cat_${cat.id}"),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = cat.titleEn,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         ),
-                        color = if (isSelected) VoidBlack else TextSecondary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        color = if (isSelected) VoidBlack else TextSecondary
                     )
                 }
             }
@@ -193,45 +205,46 @@ fun AzkarScreen(
                     color = TextMuted
                 )
 
-                // Linear completion bar
+                // Linear completion bar with Frosted styling
                 Box(
                     modifier = Modifier
                         .width(100.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(SurfaceCardHighest)
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color(0x18FFFFFF))
+                        .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(3.dp))
                 ) {
                     val progress = if (target > 0) count.toFloat() / target.toFloat() else 0f
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
                             .fillMaxWidth(progress.coerceIn(0f, 1f))
-                            .background(if (isCompleted) AccentGreen else PureWhite)
+                            .background(if (isCompleted) WhiteSilverGradient else SolidColor(PureWhite))
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ARABIC DHIKR CARD - also clickable for natural, easy tap during recitation
-            Card(
+            // ARABIC DHIKR CARD - Frosted Glass Card
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp))
+                    .background(GlassDarkElevated)
+                    .background(GlassGradientHero)
+                    .border(1.dp, GlassBorderBrushHighlight, RoundedCornerShape(24.dp))
                     .clickable {
                         val willComplete = (count + 1) >= target
                         triggerCounterHaptic(willComplete && !isCompleted)
                         viewModel.incrementAzkarCount(currentItem)
                     }
-                    .testTag("azkar_text_card"),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+                    .testTag("azkar_text_card")
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -262,16 +275,17 @@ fun AzkarScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = SurfaceLow,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x14FFFFFF))
+                            .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = "${currentItem.reference} • ${currentItem.benefit}",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextMuted,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -280,32 +294,33 @@ fun AzkarScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TACTILE HAPTIC STATUS BADGE
+            // TACTILE HAPTIC STATUS BADGE - Frosted Pill
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceCard)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .background(Color(0x14FFFFFF))
+                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = if (isCompleted) AccentGreen else TextMuted,
+                    tint = PureWhite,
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isCompleted) "Target Completed • Dhikr Finished" else "Tactile Haptic Feedback Active",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isCompleted) AccentGreen else TextMuted
+                    color = PureWhite
                 )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // LARGE TACTILE SPRING COUNTER BUTTON
+            // LARGE TACTILE SPRING COUNTER BUTTON - Luminous Glass / Silver Orb
             val interactionSource = remember { MutableInteractionSource() }
             val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -320,11 +335,17 @@ fun AzkarScreen(
                     .size(144.dp)
                     .scale(buttonScale)
                     .clip(CircleShape)
-                    .background(if (isCompleted) SurfaceCardHigh else PureWhite)
-                    .border(
-                        width = 4.dp,
-                        color = if (isCompleted) AccentGreen else BorderOutline,
-                        shape = CircleShape
+                    .then(
+                        if (isCompleted) {
+                            Modifier
+                                .background(GlassDarkElevated)
+                                .background(GlassGradientActive)
+                                .border(3.dp, PureWhite, CircleShape)
+                        } else {
+                            Modifier
+                                .background(WhiteSilverGradient)
+                                .border(3.dp, PureWhite, CircleShape)
+                        }
                     )
                     .clickable(
                         interactionSource = interactionSource,
@@ -344,19 +365,19 @@ fun AzkarScreen(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-1).sp
                         ),
-                        color = if (isCompleted) AccentGreen else VoidBlack
+                        color = if (isCompleted) PureWhite else VoidBlack
                     )
                     Text(
                         text = "OF $target",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (isCompleted) TextMuted else Color(0xFF555555)
+                        color = if (isCompleted) TextSecondary else Color(0xFF444444)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // PREV / NEXT BUTTONS
+            // PREV / NEXT BUTTONS - Frosted Glass & Gradient Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -364,39 +385,71 @@ fun AzkarScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
-                    onClick = {
-                        view.performHapticFeedback(
-                            HapticFeedbackConstants.KEYBOARD_TAP,
-                            HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
-                        )
-                        viewModel.previousAzkar()
-                    },
-                    enabled = uiState.currentAzkarIndex > 0,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PureWhite),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0x14FFFFFF))
+                        .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
+                        .clickable(enabled = uiState.currentAzkarIndex > 0) {
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.KEYBOARD_TAP,
+                                HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
+                            )
+                            viewModel.previousAzkar()
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Previous")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Previous",
+                            tint = if (uiState.currentAzkarIndex > 0) PureWhite else TextMuted
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Previous",
+                            color = if (uiState.currentAzkarIndex > 0) PureWhite else TextMuted,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
                 }
 
-                Button(
-                    onClick = {
-                        view.performHapticFeedback(
-                            HapticFeedbackConstants.KEYBOARD_TAP,
-                            HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .then(
+                            if (uiState.currentAzkarIndex < items.size - 1) {
+                                Modifier
+                                    .background(WhiteSilverGradient)
+                                    .border(1.dp, PureWhite, RoundedCornerShape(16.dp))
+                            } else {
+                                Modifier
+                                    .background(Color(0x14FFFFFF))
+                                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
+                            }
                         )
-                        viewModel.nextAzkar()
-                    },
-                    enabled = uiState.currentAzkarIndex < items.size - 1,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PureWhite, contentColor = VoidBlack)
+                        .clickable(enabled = uiState.currentAzkarIndex < items.size - 1) {
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.KEYBOARD_TAP,
+                                HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
+                            )
+                            viewModel.nextAzkar()
+                        }
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
                 ) {
-                    Text("Next", fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Next",
+                            color = if (uiState.currentAzkarIndex < items.size - 1) VoidBlack else TextMuted,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Next",
+                            tint = if (uiState.currentAzkarIndex < items.size - 1) VoidBlack else TextMuted
+                        )
+                    }
                 }
             }
         }

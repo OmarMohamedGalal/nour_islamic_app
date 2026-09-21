@@ -14,7 +14,7 @@ import androidx.room.RoomDatabase
         PrayerLogEntity::class,
         UserSettingsEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class NoorDatabase : RoomDatabase() {

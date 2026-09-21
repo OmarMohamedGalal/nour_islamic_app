@@ -63,5 +63,6 @@ data class UserSettingsEntity(
     val maghribNotification: Boolean = true,
     val ishaNotification: Boolean = true,
     val adhanSound: String = "athan", // "athan", "takbeer", "soft", "silent"
-    val hijriAdjustmentDays: Int = -2
+    val hijriAdjustmentDays: Int = -2,
+    val quranReciterId: String = "alafasy"
 )

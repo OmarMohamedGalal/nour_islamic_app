@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,9 +64,9 @@ fun PrayerScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(VoidBlack)
+            .background(Color.Transparent)
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // TOP HEADER: App Title & City Selector Pill
@@ -93,18 +94,19 @@ fun PrayerScreen(
                     )
                 }
 
-                // City Selector Pill
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = SurfaceCard,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline),
+                // City Selector Pill - Frosted Glass Capsule
+                Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
+                        .background(GlassDarkBase)
+                        .background(GlassGradientCard)
+                        .border(1.dp, GlassBorderBrush, RoundedCornerShape(20.dp))
                         .clickable { viewModel.setShowCityDialog(true) }
-                        .testTag("city_selector_pill")
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .testTag("city_selector_pill"),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -124,15 +126,16 @@ fun PrayerScreen(
             }
         }
 
-        // HERO COUNTDOWN CARD
+        // HERO COUNTDOWN CARD - Glassmorphic Hero with White-Black Ambient Glow
         item {
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag("hero_countdown_card"),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(GlassDarkElevated)
+                    .background(GlassGradientHero)
+                    .border(1.dp, GlassBorderBrushHighlight, RoundedCornerShape(28.dp))
+                    .testTag("hero_countdown_card")
             ) {
                 Column(
                     modifier = Modifier
@@ -148,7 +151,7 @@ fun PrayerScreen(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(AccentGreen)
+                                .background(PureWhite)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -184,7 +187,7 @@ fun PrayerScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Prayer Streak Indicators
+                    // Prayer Streak Indicators - Glass Capsule
                     val log = uiState.todayPrayerLog
                     val prayersDone = listOf(log.fajr, log.dhuhr, log.asr, log.maghrib, log.isha).count { it }
 
@@ -192,7 +195,8 @@ fun PrayerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(SurfaceLow)
+                            .background(Color(0x18FFFFFF))
+                            .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -222,9 +226,14 @@ fun PrayerScreen(
                             ).forEach { (label, done) ->
                                 Box(
                                     modifier = Modifier
-                                        .size(20.dp)
+                                        .size(22.dp)
                                         .clip(CircleShape)
-                                        .background(if (done) PureWhite else SurfaceCardHighest),
+                                        .background(if (done) WhiteSilverGradient else SolidColor(Color(0x22FFFFFF)))
+                                        .border(
+                                            width = 1.dp,
+                                            brush = if (done) androidx.compose.ui.graphics.Brush.linearGradient(listOf(PureWhite, SilverMuted)) else GlassBorderBrushSubtle,
+                                            shape = CircleShape
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -290,15 +299,16 @@ fun PrayerScreen(
                 )
             }
 
-            // NIGHT PRAYERS / TAHAJJUD CARD
+            // NIGHT PRAYERS / TAHAJJUD CARD - Frosted Glass
             item {
-                Card(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceLow),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                        .padding(top = 8.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(GlassDarkBase)
+                        .background(GlassGradientCard)
+                        .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(20.dp))
                 ) {
                     Row(
                         modifier = Modifier
@@ -326,7 +336,7 @@ fun PrayerScreen(
                             modifier = Modifier
                                 .height(32.dp)
                                 .width(1.dp)
-                                .background(BorderOutline)
+                                .background(GlassBorderColorSubtle)
                         )
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -370,17 +380,27 @@ fun PrayerRowCard(
     val fmt = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
     val formattedTime = prayerItem.time.format(fmt)
 
-    val containerColor = if (isNext) PureWhite else SurfaceCard
     val contentColor = if (isNext) VoidBlack else PureWhite
     val secondaryColor = if (isNext) Color(0xFF444444) else TextMuted
+    val shape = RoundedCornerShape(20.dp)
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("prayer_row_${prayerItem.type.name.lowercase()}"),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = if (isNext) null else androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+            .clip(shape)
+            .then(
+                if (isNext) {
+                    Modifier
+                        .background(WhiteSilverGradient)
+                        .border(1.dp, Color.White, shape)
+                } else {
+                    Modifier
+                        .background(GlassDarkBase)
+                        .background(GlassGradientCard)
+                        .border(1.dp, GlassBorderBrushSubtle, shape)
+                }
+            )
+            .testTag("prayer_row_${prayerItem.type.name.lowercase()}")
     ) {
         Row(
             modifier = Modifier
@@ -398,10 +418,16 @@ fun PrayerRowCard(
                             .clip(CircleShape)
                             .border(
                                 width = 1.5.dp,
-                                color = if (isDone) (if (isNext) VoidBlack else PureWhite) else secondaryColor,
+                                color = if (isDone) (if (isNext) VoidBlack else PureWhite) else (if (isNext) Color(0xFF666666) else GlassBorderColorLight),
                                 shape = CircleShape
                             )
-                            .background(if (isDone) (if (isNext) VoidBlack else PureWhite) else Color.Transparent)
+                            .background(
+                                if (isDone) {
+                                    if (isNext) BlackCharcoalGradient else WhiteSilverGradient
+                                } else {
+                                    SolidColor(Color.Transparent)
+                                }
+                            )
                             .clickable { onToggleDone() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -434,11 +460,23 @@ fun PrayerRowCard(
                         )
                     }
                     if (isNext) {
-                        Text(
-                            text = "Next Prayer",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF1B5E20)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(VoidBlack)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "NEXT PRAYER",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 9.sp,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = PureWhite
+                            )
+                        }
                     }
                 }
             }
@@ -480,7 +518,9 @@ fun CitySelectionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SurfaceCardHigh,
+        containerColor = GlassDarkElevated,
+        modifier = Modifier
+            .border(1.dp, GlassBorderBrush, RoundedCornerShape(28.dp)),
         title = {
             Text(
                 text = "Select City",
@@ -497,17 +537,27 @@ fun CitySelectionDialog(
                 items(com.example.data.prayer.LocationHelper.WORLD_CITIES.size) { i ->
                     val city = com.example.data.prayer.LocationHelper.WORLD_CITIES[i]
                     val isSelected = city.nameEn == currentCity.nameEn
-                    Surface(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSelectCity(city) },
-                        color = if (isSelected) SurfaceCardHighest else Color.Transparent
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .then(
+                                if (isSelected) {
+                                    Modifier
+                                        .background(WhiteSilverGradient)
+                                        .border(1.dp, PureWhite, RoundedCornerShape(14.dp))
+                                } else {
+                                    Modifier
+                                        .background(Color(0x10FFFFFF))
+                                        .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(14.dp))
+                                }
+                            )
+                            .clickable { onSelectCity(city) }
+                            .padding(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -515,18 +565,18 @@ fun CitySelectionDialog(
                                 Text(
                                     text = city.nameEn,
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = PureWhite
+                                    color = if (isSelected) VoidBlack else PureWhite
                                 )
                                 Text(
                                     text = "${city.countryEn} • ${city.defaultMethod.titleEn}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = TextMuted
+                                    color = if (isSelected) Color(0xFF444444) else TextMuted
                                 )
                             }
                             Text(
                                 text = city.nameAr,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = if (isSelected) VoidBlack else TextSecondary
                             )
                         }
                     }

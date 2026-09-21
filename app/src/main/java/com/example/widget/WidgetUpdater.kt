@@ -86,6 +86,10 @@ object WidgetUpdater {
     }
 
     fun updateAllWidgets(context: Context) {
+        // 1. Immediately update all widgets synchronously using cached state
+        updateAllWidgetsSync(context)
+
+        // 2. Refresh from Room database asynchronously in background
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = NoorDatabase.getInstance(context)
@@ -94,97 +98,145 @@ object WidgetUpdater {
                 val todayStr = LocalDate.now().toString()
                 val prayerLog = db.noorDao().getPrayerLogForDate(todayStr).firstOrNull()
 
-                val lat = settings?.latitude ?: 21.4225
-                val lng = settings?.longitude ?: 39.8262
-                val cityName = settings?.cityName ?: "Makkah"
-                val method = CalculationMethod.entries.firstOrNull { it.id == settings?.calculationMethodId }
-                    ?: CalculationMethod.UMM_AL_QURA
-                val madhab = Madhab.entries.firstOrNull { it.id == settings?.madhabId }
-                    ?: Madhab.STANDARD
-
-                val today = LocalDate.now()
-                val nowTime = LocalTime.now()
-                val schedule = AstronomicalPrayerCalculator.calculateSchedule(
-                    date = today,
-                    latitude = lat,
-                    longitude = lng,
-                    cityName = cityName,
-                    method = method,
-                    madhab = madhab
-                )
-
-                val hijriAdjustment = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
-                    .getInt("hijri_adjustment", -2).toLong()
-                val hijri = CalendarRepository.getHijriDate(today, hijriAdjustment)
-                val (nextPrayer, diffSec) = schedule.getNextPrayer(nowTime)
-                val diffMins = (diffSec / 60)
-                val diffHours = diffMins / 60
-                val countdownStr = if (diffHours > 0) "in ${diffHours}h ${diffMins % 60}m" else "in ${diffMins}m"
-
-                val timeFmt = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
-                val militaryFmt = DateTimeFormatter.ofPattern("hh:mm", Locale.ENGLISH)
-                val appWidgetManager = AppWidgetManager.getInstance(context)
-
-                // 1. Next Prayer Widget
-                updateNextPrayer(context, appWidgetManager, nextPrayer.type.displayNameEn, nextPrayer.time.format(timeFmt), countdownStr, cityName)
-
-                // 2. Full Schedule Widget
-                val hijriSub = "${hijri.day} ${hijri.monthNameEn} ${hijri.year} AH"
-                updateFullSchedule(context, appWidgetManager, schedule, hijriSub)
-
-                // 3. Hijri Date Widget
-                updateHijriDate(context, appWidgetManager, hijri.day, "${hijri.monthNameEn} ${hijri.year} AH")
-
-                // 4. Qibla Widget
-                val qiblaBearing = QiblaSensorManager.calculateQiblaBearing(lat, lng)
-                updateQibla(context, appWidgetManager, qiblaBearing)
-
-                // 5. Quran Continue Widget
-                val surahName = reading?.surahNameEn ?: "Al-Kahf"
-                val ayahNum = reading?.verseNumber ?: 1
-                updateQuranContinue(context, appWidgetManager, surahName, ayahNum)
-
-                // 6. Azkar Quick Counter Widget
-                updateAzkar(context, appWidgetManager)
-
-                // 7. Duaa of the Day
-                val duaa = DuaaRepository.DUAA_LIST.firstOrNull() ?: DuaaRepository.DUAA_LIST[0]
-                updateDuaa(context, appWidgetManager, duaa.arabicText, duaa.translation, duaa.category.titleEn)
-
-                // 8. Ramadan Widget
-                val ramadan = CalendarRepository.getRamadanStatus(today, nowTime, schedule.fajr, schedule.maghrib, hijriAdjustment)
-                updateRamadan(context, appWidgetManager, ramadan.hoursRemainingToIftar, schedule.maghrib.format(timeFmt))
-
-                // 9. Holiday Widget
-                val holidays = CalendarRepository.getUpcomingHolidays(today, hijriAdjustment)
-                val nextHoliday = holidays.firstOrNull()
-                if (nextHoliday != null) {
-                    val hDate = "${nextHoliday.holiday.hijriDay} ${CalendarRepository.HIJRI_MONTHS_EN[nextHoliday.holiday.hijriMonth - 1]} ${hijri.year} AH"
-                    updateHoliday(context, appWidgetManager, nextHoliday.holiday.nameEn, "in ${nextHoliday.daysRemaining} days", hDate)
+                val prefs = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                if (settings != null) {
+                    editor.putInt("hijri_adjustment", settings.hijriAdjustmentDays)
+                    editor.putString("city_name", settings.cityName)
+                    editor.putFloat("latitude", settings.latitude.toFloat())
+                    editor.putFloat("longitude", settings.longitude.toFloat())
+                    editor.putString("calculation_method", settings.calculationMethodId)
+                    editor.putString("madhab", settings.madhabId)
                 }
+                if (reading != null) {
+                    editor.putString("reading_surah", reading.surahNameEn)
+                    editor.putInt("reading_ayah", reading.verseNumber)
+                }
+                if (prayerLog != null) {
+                    val doneCount = listOf(prayerLog.fajr, prayerLog.dhuhr, prayerLog.asr, prayerLog.maghrib, prayerLog.isha).count { it }
+                    editor.putInt("prayers_done_count", doneCount)
+                    editor.putBoolean("fajr_done", prayerLog.fajr)
+                    editor.putBoolean("dhuhr_done", prayerLog.dhuhr)
+                    editor.putBoolean("asr_done", prayerLog.asr)
+                    editor.putBoolean("maghrib_done", prayerLog.maghrib)
+                    editor.putBoolean("isha_done", prayerLog.isha)
+                }
+                editor.apply()
 
-                // 10. Prayer Streak Widget
-                val doneCount = listOf(prayerLog?.fajr, prayerLog?.dhuhr, prayerLog?.asr, prayerLog?.maghrib, prayerLog?.isha).count { it == true }
-                updatePrayerStreak(context, appWidgetManager, doneCount, prayerLog?.fajr == true, prayerLog?.dhuhr == true, prayerLog?.asr == true, prayerLog?.maghrib == true, prayerLog?.isha == true)
-
-                // 11. Horizontal Prayer Bar Widget (Image 1)
-                updatePrayerBar(context, appWidgetManager, schedule, nextPrayer.type)
-
-                // 12. Quran Verse Widget (Image 2) - tap cycles to next ayah
-                QuranVerseWidgetProvider.updateWidget(context, appWidgetManager)
-
-                // 13. Compact Prayer List Widget (Image 3)
-                updatePrayerList(context, appWidgetManager, schedule, nextPrayer.type)
-
-                // 14. Next Prayer Arabic Banner Widget (Image 4)
-                updateNextPrayerArabic(context, appWidgetManager, nextPrayer.time.format(militaryFmt), countdownStr, nextPrayer.type.displayNameAr)
-
-                // Schedule precision alarm for exact prayer change
-                scheduleExactPrayerUpdate(context, nextPrayer.time)
-
+                // Re-apply synced widgets
+                updateAllWidgetsSync(context)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    fun updateAllWidgetsSync(context: Context, appWidgetManager: AppWidgetManager? = null) {
+        try {
+            val prefs = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            val hijriAdjustment = prefs.getInt("hijri_adjustment", -2).toLong()
+            val cityName = prefs.getString("city_name", "Makkah") ?: "Makkah"
+            val lat = prefs.getFloat("latitude", 21.4225f).toDouble()
+            val lng = prefs.getFloat("longitude", 39.8262f).toDouble()
+            val methodId = prefs.getString("calculation_method", "umm_al_qura")
+            val madhabId = prefs.getString("madhab", "standard")
+
+            val method = CalculationMethod.entries.firstOrNull { it.id == methodId }
+                ?: CalculationMethod.UMM_AL_QURA
+            val madhab = Madhab.entries.firstOrNull { it.id == madhabId }
+                ?: Madhab.STANDARD
+
+            val today = LocalDate.now()
+            val nowTime = LocalTime.now()
+
+            val hijri = CalendarRepository.getHijriDate(today, hijriAdjustment)
+            val schedule = AstronomicalPrayerCalculator.calculateSchedule(
+                date = today,
+                latitude = lat,
+                longitude = lng,
+                cityName = cityName,
+                method = method,
+                madhab = madhab,
+                hijriDateString = hijri.formatEn()
+            )
+
+            val nextObligatory = schedule.getNextObligatoryPrayer(nowTime)
+            val nextAny = schedule.getNextPrayer(nowTime)
+
+            val diffSec = nextObligatory.remainingSeconds
+            val diffMins = (diffSec / 60)
+            val diffHours = diffMins / 60
+            val countdownStr = if (diffHours > 0) "in ${diffHours}h ${diffMins % 60}m" else "in ${diffMins}m"
+
+            val timeFmt = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+            val militaryFmt = DateTimeFormatter.ofPattern("hh:mm", Locale.ENGLISH)
+            val gregorianFmt = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.ENGLISH)
+            val manager = appWidgetManager ?: AppWidgetManager.getInstance(context)
+
+            // 1. Next Prayer Widget
+            updateNextPrayer(context, manager, nextObligatory.prayer.type.displayNameEn, nextObligatory.prayer.time.format(timeFmt), countdownStr, cityName)
+
+            // 2. Full Schedule Widget
+            val hijriSub = "${hijri.day} ${hijri.monthNameEn} ${hijri.year} AH"
+            updateFullSchedule(context, manager, schedule, hijriSub)
+
+            // 3. Hijri Date Widget (Accurate dynamic date matching app)
+            updateHijriDate(context, manager, hijri.day, "${hijri.monthNameEn.uppercase()} ${hijri.year} AH", today.format(gregorianFmt))
+
+            // 4. Qibla Widget
+            val qiblaBearing = QiblaSensorManager.calculateQiblaBearing(lat, lng)
+            updateQibla(context, manager, qiblaBearing)
+
+            // 5. Quran Continue Widget
+            val surahName = prefs.getString("reading_surah", "Al-Kahf") ?: "Al-Kahf"
+            val ayahNum = prefs.getInt("reading_ayah", 1)
+            updateQuranContinue(context, manager, surahName, ayahNum)
+
+            // 6. Azkar Quick Counter Widget
+            updateAzkar(context, manager)
+
+            // 7. Duaa of the Day
+            val duaa = DuaaRepository.DUAA_LIST.firstOrNull() ?: DuaaRepository.DUAA_LIST[0]
+            updateDuaa(context, manager, duaa.arabicText, duaa.translation, duaa.category.titleEn)
+
+            // 8. Ramadan Widget
+            val ramadan = CalendarRepository.getRamadanStatus(today, nowTime, schedule.fajr, schedule.maghrib, hijriAdjustment)
+            updateRamadan(context, manager, ramadan.hoursRemainingToIftar, schedule.maghrib.format(timeFmt))
+
+            // 9. Holiday Widget
+            val holidays = CalendarRepository.getUpcomingHolidays(today, hijriAdjustment)
+            val nextHoliday = holidays.firstOrNull()
+            if (nextHoliday != null) {
+                val hYear = if (nextHoliday.holiday.hijriMonth < hijri.month) hijri.year + 1 else hijri.year
+                val hDate = "${nextHoliday.holiday.hijriDay} ${CalendarRepository.HIJRI_MONTHS_EN[nextHoliday.holiday.hijriMonth - 1]} $hYear AH"
+                updateHoliday(context, manager, nextHoliday.holiday.nameEn, "in ${nextHoliday.daysRemaining} days", hDate)
+            }
+
+            // 10. Prayer Streak Widget
+            val doneCount = prefs.getInt("prayers_done_count", 0)
+            val f = prefs.getBoolean("fajr_done", false)
+            val d = prefs.getBoolean("dhuhr_done", false)
+            val a = prefs.getBoolean("asr_done", false)
+            val m = prefs.getBoolean("maghrib_done", false)
+            val i = prefs.getBoolean("isha_done", false)
+            updatePrayerStreak(context, manager, doneCount, f, d, a, m, i)
+
+            // 11. Horizontal Prayer Bar Widget (Active obligatory prayer always highlighted)
+            updatePrayerBar(context, manager, schedule, nextObligatory.prayer.type)
+
+            // 12. Quran Verse Widget (Tap cycles to next ayah)
+            QuranVerseWidgetProvider.updateWidget(context, manager)
+
+            // 13. Compact Prayer List Widget (Active obligatory prayer row highlighted)
+            updatePrayerList(context, manager, schedule, nextObligatory.prayer.type)
+
+            // 14. Next Prayer Arabic Banner Widget
+            updateNextPrayerArabic(context, manager, nextObligatory.prayer.time.format(militaryFmt), countdownStr, nextObligatory.prayer.type.displayNameAr)
+
+            // Schedule precision alarm for exact prayer change
+            scheduleExactPrayerUpdate(context, nextObligatory.prayer.time)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -229,12 +281,11 @@ object WidgetUpdater {
         manager.updateAppWidget(component, views)
     }
 
-    private fun updateHijriDate(context: Context, manager: AppWidgetManager, day: Int, monthYear: String) {
+    private fun updateHijriDate(context: Context, manager: AppWidgetManager, day: Int, monthYear: String, gregorianFormatted: String) {
         val views = RemoteViews(context.packageName, R.layout.widget_hijri_date).apply {
             setTextViewText(R.id.widget_hijri_day_num, day.toString())
             setTextViewText(R.id.widget_hijri_month_year, monthYear)
-            val gregorianFmt = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.ENGLISH)
-            setTextViewText(R.id.widget_gregorian_date, LocalDate.now().format(gregorianFmt))
+            setTextViewText(R.id.widget_gregorian_date, gregorianFormatted)
             setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://calendar", 103))
         }
         val component = ComponentName(context, HijriDateWidgetProvider::class.java)

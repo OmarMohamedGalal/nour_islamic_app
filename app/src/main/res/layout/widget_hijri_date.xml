@@ -12,7 +12,6 @@
         android:id="@+id/widget_hijri_day_num"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2"
         android:textColor="#FFFFFF"
         android:textSize="36sp"
         android:textStyle="bold" />
@@ -28,7 +27,6 @@
             android:id="@+id/widget_hijri_month_year"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="RABI AL-AWWAL 1448 AH"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -37,7 +35,6 @@
             android:id="@+id/widget_gregorian_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Friday, March 14, 2025"
             android:textColor="#888888"
             android:textSize="11sp" />
     </LinearLayout>

@@ -3,6 +3,7 @@ package com.example.data.repository
 import android.content.Context
 import com.example.NoorApplication
 import com.example.data.model.Ayah
+import com.example.data.model.QuranReciter
 import com.example.data.model.RevelationType
 import com.example.data.model.Surah
 import org.json.JSONObject
@@ -128,19 +129,25 @@ object QuranRepository {
     )
 
     private var jsonRoot: JSONObject? = null
-    private val surahCache = ConcurrentHashMap<Int, List<Ayah>>()
+    private val surahCache = ConcurrentHashMap<String, List<Ayah>>()
 
-    private val bismillahRegex = Regex("^ب[َِّ]*سْمِ\\s+ٱللَّ?ّ?هِ\\s+ٱلرَّ?ّ?حْمَٰ?نِ\\s+ٱلرَّ?ّ?حِيمِ\\s*")
+    private val bismillahRegex = Regex("^[\\uFEFF\\u200E\\u200F\\s]*ب[َِّ]*س[ْ]*م[ِ]*\\s+[ٱا]للَّ?[ّ]*ه[ِ]*\\s+[ٱا]لرَّ?[ّ]*ح[ْ]*مَ?ٰ?ن[ِ]*\\s+[ٱا]لرَّ?[ّ]*ح[ِ]*ي[مِ]*[ِ]*[\\s،-]*")
 
     private fun cleanVerseText(surahNumber: Int, verseNumber: Int, rawArabic: String): String {
         if (surahNumber > 1 && verseNumber == 1) {
-            return bismillahRegex.replace(rawArabic, "").trim()
+            val cleaned = bismillahRegex.replace(rawArabic, "").trim()
+            if (cleaned.isNotEmpty()) return cleaned
         }
         return rawArabic
     }
 
-    fun getAyahsForSurah(surahNumber: Int, context: Context? = null): List<Ayah> {
-        surahCache[surahNumber]?.let { return it }
+    fun getAyahsForSurah(
+        surahNumber: Int,
+        context: Context? = null,
+        reciter: QuranReciter = QuranReciter.ALAFASY
+    ): List<Ayah> {
+        val cacheKey = "$surahNumber-${reciter.id}"
+        surahCache[cacheKey]?.let { return it }
 
         try {
             val ctx = context ?: try { NoorApplication.instance } catch (e: Exception) { null }
@@ -170,30 +177,30 @@ object QuranRepository {
                             arabicText = arText,
                             englishTranslation = enText,
                             transliteration = "Ayah $vNum min Surah ${surah.nameEn}",
-                            audioUrl = String.format("https://everyayah.com/data/Alafasy_128kbps/%03d%03d.mp3", surahNumber, vNum)
+                            audioUrl = reciter.getAudioUrl(surahNumber, vNum)
                         )
                     )
                 }
-                surahCache[surahNumber] = list
+                surahCache[cacheKey] = list
                 return list
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        return getFallbackAyahs(surahNumber)
+        return getFallbackAyahs(surahNumber, reciter)
     }
 
-    private fun getFallbackAyahs(surahNumber: Int): List<Ayah> {
+    private fun getFallbackAyahs(surahNumber: Int, reciter: QuranReciter = QuranReciter.ALAFASY): List<Ayah> {
         return when (surahNumber) {
             1 -> listOf(
-                Ayah(1, 1, "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "In the name of Allah, the Entirely Merciful, the Especially Merciful.", "Bismillaahir-Rahmaanir-Raheem", "https://everyayah.com/data/Alafasy_128kbps/001001.mp3"),
-                Ayah(1, 2, "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", "[All] praise is [due] to Allah, Lord of the worlds -", "Alhamdu lillaahi Rabbil 'aalameen", "https://everyayah.com/data/Alafasy_128kbps/001002.mp3"),
-                Ayah(1, 3, "الرَّحْمَٰنِ الرَّحِيمِ", "The Entirely Merciful, the Especially Merciful,", "Ar-Rahmaanir-Raheem", "https://everyayah.com/data/Alafasy_128kbps/001003.mp3"),
-                Ayah(1, 4, "مَالِكِ يَوْمِ الدِّينِ", "Sovereign of the Day of Recompense.", "Maaliki Yawmid-Deen", "https://everyayah.com/data/Alafasy_128kbps/001004.mp3"),
-                Ayah(1, 5, "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", "It is You we worship and You we ask for help.", "Iyyaaka na'budu wa lyyaaka nasta'een", "https://everyayah.com/data/Alafasy_128kbps/001005.mp3"),
-                Ayah(1, 6, "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", "Guide us to the straight path -", "Ihdinas-Siraatal-Mustaqeem", "https://everyayah.com/data/Alafasy_128kbps/001006.mp3"),
-                Ayah(1, 7, "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.", "Siraatal-lazeena an'amta 'alayhim ghayril-maghdoobi 'alayhim wa lad-daaaalleen", "https://everyayah.com/data/Alafasy_128kbps/001007.mp3")
+                Ayah(1, 1, "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "In the name of Allah, the Entirely Merciful, the Especially Merciful.", "Bismillaahir-Rahmaanir-Raheem", reciter.getAudioUrl(1, 1)),
+                Ayah(1, 2, "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", "[All] praise is [due] to Allah, Lord of the worlds -", "Alhamdu lillaahi Rabbil 'aalameen", reciter.getAudioUrl(1, 2)),
+                Ayah(1, 3, "الرَّحْمَٰنِ الرَّحِيمِ", "The Entirely Merciful, the Especially Merciful,", "Ar-Rahmaanir-Raheem", reciter.getAudioUrl(1, 3)),
+                Ayah(1, 4, "مَالِكِ يَوْمِ الدِّينِ", "Sovereign of the Day of Recompense.", "Maaliki Yawmid-Deen", reciter.getAudioUrl(1, 4)),
+                Ayah(1, 5, "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", "It is You we worship and You we ask for help.", "Iyyaaka na'budu wa lyyaaka nasta'een", reciter.getAudioUrl(1, 5)),
+                Ayah(1, 6, "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", "Guide us to the straight path -", "Ihdinas-Siraatal-Mustaqeem", reciter.getAudioUrl(1, 6)),
+                Ayah(1, 7, "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.", "Siraatal-lazeena an'amta 'alayhim ghayril-maghdoobi 'alayhim wa lad-daaaalleen", reciter.getAudioUrl(1, 7))
             )
             2 -> listOf(
                 Ayah(2, 1, "الم", "Alif, Lam, Meem.", "Alif-Laaam-Meeem", "https://everyayah.com/data/Alafasy_128kbps/002001.mp3"),
@@ -258,7 +265,7 @@ object QuranRepository {
                         arabicText = if (v == 1 && surahNumber != 9) "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" else "آية ${v} من سورة ${surah.nameAr}",
                         englishTranslation = "Verse $v of Surah ${surah.nameEn}: Guidance and remembrance from Allah, the Lord of all worlds.",
                         transliteration = "Ayah $v min Surah ${surah.nameEn}",
-                        audioUrl = String.format("https://everyayah.com/data/Alafasy_128kbps/%03d%03d.mp3", surahNumber, v)
+                        audioUrl = reciter.getAudioUrl(surahNumber, v)
                     )
                 }
             }

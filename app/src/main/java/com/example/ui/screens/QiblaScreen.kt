@@ -56,7 +56,7 @@ fun QiblaScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VoidBlack)
+            .background(Color.Transparent)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -83,45 +83,47 @@ fun QiblaScreen(
                 )
             }
 
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceCard,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(GlassDarkBase)
+                    .background(GlassGradientCard)
+                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Text(
                     text = "${qiblaState.distanceKm.toInt()} KM",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = PureWhite,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    color = PureWhite
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // TARGET ALIGNMENT BANNER
+        // TARGET ALIGNMENT BANNER - Frosted Luminous Glass
         AnimatedVisibility(visible = qiblaState.isAligned) {
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = AccentGreen.copy(alpha = 0.15f)),
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, AccentGreen)
+                    .padding(bottom = 12.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(GlassDarkElevated)
+                    .background(GlassGradientActive)
+                    .border(1.5.dp, PureWhite, RoundedCornerShape(18.dp))
+                    .padding(14.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(imageVector = Icons.Filled.CheckCircle, contentDescription = null, tint = AccentGreen)
+                    Icon(imageVector = Icons.Filled.CheckCircle, contentDescription = null, tint = PureWhite)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "ALIGNED DIRECTLY WITH THE HOLY KAABA",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-                        color = AccentGreen
+                        color = PureWhite
                     )
                 }
             }
@@ -140,13 +142,13 @@ fun QiblaScreen(
 
                 // Outer decorative rings
                 drawCircle(
-                    color = BorderOutline,
+                    color = Color(0x35FFFFFF),
                     radius = radius,
                     center = center,
                     style = Stroke(width = 2.dp.toPx())
                 )
                 drawCircle(
-                    color = SurfaceCard,
+                    color = Color(0x14FFFFFF),
                     radius = radius - 12.dp.toPx(),
                     center = center
                 )
@@ -157,7 +159,7 @@ fun QiblaScreen(
                     for (deg in 0 until 360 step 15) {
                         val isMajor = deg % 90 == 0
                         val tickLength = if (isMajor) 14.dp.toPx() else 6.dp.toPx()
-                        val tickColor = if (isMajor) PureWhite else BorderOutline
+                        val tickColor = if (isMajor) PureWhite else Color(0x35FFFFFF)
                         val rad = Math.toRadians(deg.toDouble())
 
                         val startX = center.x + (radius - tickLength) * sin(rad).toFloat()
@@ -179,14 +181,14 @@ fun QiblaScreen(
                     val kaabaY = center.y - (radius - 35.dp.toPx()) * cos(qiblaRad).toFloat()
 
                     drawCircle(
-                        color = if (qiblaState.isAligned) AccentGreen else PureWhite,
+                        color = PureWhite,
                         radius = 12.dp.toPx(),
                         center = Offset(kaabaX, kaabaY)
                     )
 
                     // Connecting vector to Kaaba
                     drawLine(
-                        color = if (qiblaState.isAligned) AccentGreen else TextMuted,
+                        color = if (qiblaState.isAligned) PureWhite else Color(0x44FFFFFF),
                         start = center,
                         end = Offset(kaabaX, kaabaY),
                         strokeWidth = 2.dp.toPx()
@@ -195,7 +197,7 @@ fun QiblaScreen(
 
                 // Center fixed indicator
                 drawCircle(
-                    color = if (qiblaState.isAligned) AccentGreen else PureWhite,
+                    color = PureWhite,
                     radius = 8.dp.toPx(),
                     center = center
                 )
@@ -209,7 +211,7 @@ fun QiblaScreen(
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = null,
-                    tint = if (qiblaState.isAligned) AccentGreen else PureWhite,
+                    tint = PureWhite,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -217,19 +219,22 @@ fun QiblaScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // DEGREE READOUT STATS
+        // DEGREE READOUT STATS - Frosted Glass Panels
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(GlassDarkBase)
+                    .background(GlassGradientCard)
+                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(20.dp))
+                    .padding(16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -246,14 +251,17 @@ fun QiblaScreen(
                 }
             }
 
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderOutline)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(GlassDarkBase)
+                    .background(GlassGradientCard)
+                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(20.dp))
+                    .padding(16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -273,15 +281,16 @@ fun QiblaScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // CALIBRATION ADVICE
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            color = SurfaceLow,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+        // CALIBRATION ADVICE - Frosted Pill
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0x14FFFFFF))
+                .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(16.dp))
+                .padding(14.dp)
         ) {
             Row(
-                modifier = Modifier.padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(

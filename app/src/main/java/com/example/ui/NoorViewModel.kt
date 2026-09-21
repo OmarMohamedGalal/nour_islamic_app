@@ -1,30 +1,34 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Context
+import android.media.RingtoneManager
+import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.Build
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.NoorApplication
 import com.example.audio.AudioPlayerState
 import com.example.audio.AudioRecitationPlayer
+import com.example.audio.PrayerAudioAlertPlayer
 import com.example.data.db.*
 import com.example.data.model.*
 import com.example.data.prayer.AstronomicalPrayerCalculator
 import com.example.data.prayer.LocationHelper
+import com.example.data.repository.AzkarRepository
 import com.example.data.repository.CalendarRepository
 import com.example.data.repository.DuaaRepository
 import com.example.data.repository.QuranRepository
-import com.example.data.repository.AzkarRepository
 import com.example.receiver.AdhanAlarmScheduler
+import com.example.receiver.NotificationHelper
 import com.example.sensor.QiblaSensorManager
 import com.example.sensor.QiblaState
 import com.example.widget.WidgetUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -60,6 +64,9 @@ data class NoorUiState(
     val bookmarks: List<QuranBookmarkEntity> = emptyList(),
     val quranSearchQuery: String = "",
     val isReadingMode: Boolean = false,
+    val selectedReciter: QuranReciter = QuranReciter.ALAFASY,
+    val showReciterDialog: Boolean = false,
+    val reciterErrorMessage: String? = null,
 
     // Azkar
     val selectedAzkarCategory: AzkarCategory = AzkarCategory.MORNING,
@@ -82,6 +89,7 @@ data class NoorUiState(
 
     // Settings
     val userSettings: UserSettingsEntity = UserSettingsEntity(),
+    val selectedPrayerSoundOption: NotificationSoundOption = NotificationSoundOption.CALM_PRAYER,
     val showCityDialog: Boolean = false,
     val showCalculationMethodDialog: Boolean = false
 )
@@ -102,7 +110,18 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         // Collect DB Settings
         val initialPrefs = application.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
         val initialAdjustment = initialPrefs.getInt("hijri_adjustment", -2)
-        _uiState.update { it.copy(hijriAdjustmentDays = initialAdjustment) }
+        val initialReciterId = initialPrefs.getString("quran_reciter", "alafasy") ?: "alafasy"
+        val initialReciter = QuranReciter.fromId(initialReciterId)
+        val initialSoundOptionId = initialPrefs.getString("prayer_sound_option", "calm_prayer") ?: "calm_prayer"
+        val initialSoundOption = NotificationSoundOption.fromId(initialSoundOptionId)
+
+        _uiState.update {
+            it.copy(
+                hijriAdjustmentDays = initialAdjustment,
+                selectedReciter = initialReciter,
+                selectedPrayerSoundOption = initialSoundOption
+            )
+        }
 
         viewModelScope.launch {
             repository.userSettings.collect { settings: UserSettingsEntity? ->
@@ -114,9 +133,15 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
                     val city = LocationHelper.WORLD_CITIES.firstOrNull { it.nameEn.equals(settings.cityName, ignoreCase = true) }
                         ?: CityLocation(settings.cityName, settings.cityName, "", "", settings.latitude, settings.longitude, method)
                     val adjustment = settings.hijriAdjustmentDays
+                    val reciter = QuranReciter.fromId(settings.quranReciterId)
+                    val soundOption = NotificationSoundOption.fromId(settings.adhanSound)
 
                     application.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
-                        .edit().putInt("hijri_adjustment", adjustment).apply()
+                        .edit()
+                        .putInt("hijri_adjustment", adjustment)
+                        .putString("quran_reciter", reciter.id)
+                        .putString("prayer_sound_option", soundOption.id)
+                        .apply()
 
                     _uiState.update {
                         it.copy(
@@ -124,7 +149,9 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
                             currentCity = city,
                             calculationMethod = method,
                             madhab = madhab,
-                            hijriAdjustmentDays = adjustment
+                            hijriAdjustmentDays = adjustment,
+                            selectedReciter = reciter,
+                            selectedPrayerSoundOption = soundOption
                         )
                     }
                     refreshPrayerSchedule()
@@ -199,6 +226,14 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
 
         // Sync Widgets
         WidgetUpdater.updateAllWidgets(application)
+
+        // Periodic ticker to refresh time, countdown & widgets every 15 seconds while app is active
+        viewModelScope.launch {
+            while (isActive) {
+                kotlinx.coroutines.delay(15_000)
+                refreshPrayerSchedule()
+            }
+        }
     }
 
     fun setDestination(dest: NoorDestination) {
@@ -212,7 +247,7 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshPrayerSchedule() {
         val state = _uiState.value
-        val today = state.selectedDate
+        val today = LocalDate.now()
         val nowTime = LocalTime.now()
         val adjustment = state.hijriAdjustmentDays.toLong()
         val hijri = CalendarRepository.getHijriDate(today, adjustment)
@@ -240,6 +275,8 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.update {
             it.copy(
+                selectedDate = today,
+                currentTime = nowTime,
                 daySchedule = schedule,
                 nextPrayerItem = next,
                 hijriDate = hijri,
@@ -323,6 +360,59 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setPrayerNotificationSound(soundOption: NotificationSoundOption) {
+        val app = getApplication<Application>()
+        app.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            .edit().putString("prayer_sound_option", soundOption.id).apply()
+
+        _uiState.update { state ->
+            val updated = state.userSettings.copy(adhanSound = soundOption.id)
+            state.copy(
+                userSettings = updated,
+                selectedPrayerSoundOption = soundOption
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val cur = _uiState.value.userSettings
+            repository.saveSettings(cur.copy(adhanSound = soundOption.id))
+        }
+    }
+
+    fun previewPrayerSound(
+        soundOption: NotificationSoundOption,
+        prayerName: String = "Asr",
+        isFriday: Boolean = false
+    ) {
+        val app = getApplication<Application>()
+        if (soundOption == NotificationSoundOption.CALM_PRAYER) {
+            PrayerAudioAlertPlayer.previewAlert(app, prayerName, isFriday)
+        } else {
+            try {
+                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                val r = RingtoneManager.getRingtone(app, uri)
+                r?.play()
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    fun testPrayerNotification(prayerType: PrayerType = PrayerType.ASR, isFriday: Boolean = false) {
+        val app = getApplication<Application>()
+        val city = _uiState.value.currentCity
+        val cityName = city.nameAr.ifEmpty { city.nameEn }
+        val prayerNameEn = if (isFriday && prayerType == PrayerType.DHUHR) "Jumu'ah" else prayerType.displayNameEn
+        val prayerNameAr = if (isFriday && prayerType == PrayerType.DHUHR) "الجمعة" else prayerType.displayNameAr
+        NotificationHelper.showPrayerNotification(
+            context = app,
+            prayerName = prayerNameEn,
+            prayerNameAr = prayerNameAr,
+            prayerTimeFormatted = "12:30",
+            cityName = cityName
+        )
+    }
+
     fun togglePrayerDone(prayerName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val todayStr = LocalDate.now().toString()
@@ -335,12 +425,20 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     // QURAN ACTIONS
     fun loadSurah(surahNumber: Int, targetVerse: Int = 1) {
         val surah = QuranRepository.SURAHS.firstOrNull { it.number == surahNumber } ?: QuranRepository.SURAHS[0]
-        val ayahs = QuranRepository.getAyahsForSurah(surahNumber, getApplication())
+        val reciter = _uiState.value.selectedReciter
+        val ayahs = QuranRepository.getAyahsForSurah(surahNumber, getApplication(), reciter)
+        val unavailableMsg = if (!reciter.isSurahAvailable(surahNumber)) {
+            QuranReciter.UNAVAILABLE_MESSAGE
+        } else {
+            null
+        }
+
         _uiState.update {
             it.copy(
                 selectedSurah = surah,
                 currentAyahs = ayahs,
-                isReadingMode = true
+                isReadingMode = true,
+                reciterErrorMessage = unavailableMsg
             )
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -349,8 +447,49 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun selectReciter(reciter: QuranReciter) {
+        val app = getApplication<Application>()
+        app.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            .edit().putString("quran_reciter", reciter.id).apply()
+
+        _uiState.update { state ->
+            val updatedSettings = state.userSettings.copy(quranReciterId = reciter.id)
+            val updatedAyahs = if (state.isReadingMode && state.currentAyahs.isNotEmpty()) {
+                QuranRepository.getAyahsForSurah(state.selectedSurah.number, app, reciter)
+            } else {
+                state.currentAyahs
+            }
+            val unavailableMsg = if (state.isReadingMode && !reciter.isSurahAvailable(state.selectedSurah.number)) {
+                QuranReciter.UNAVAILABLE_MESSAGE
+            } else {
+                null
+            }
+            state.copy(
+                selectedReciter = reciter,
+                userSettings = updatedSettings,
+                currentAyahs = updatedAyahs,
+                showReciterDialog = false,
+                reciterErrorMessage = unavailableMsg
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val cur = _uiState.value.userSettings
+            repository.saveSettings(cur.copy(quranReciterId = reciter.id))
+        }
+    }
+
+    fun setShowReciterDialog(show: Boolean) {
+        _uiState.update { it.copy(showReciterDialog = show) }
+    }
+
+    fun clearReciterErrorMessage() {
+        _uiState.update { it.copy(reciterErrorMessage = null) }
+        audioPlayer.clearError()
+    }
+
     fun closeReadingMode() {
-        _uiState.update { it.copy(isReadingMode = false) }
+        _uiState.update { it.copy(isReadingMode = false, reciterErrorMessage = null) }
         audioPlayer.stop()
     }
 
@@ -372,6 +511,27 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun playAyahAudio(ayah: Ayah) {
+        val reciter = _uiState.value.selectedReciter
+        if (!reciter.isSurahAvailable(ayah.surahNumber)) {
+            _uiState.update { it.copy(reciterErrorMessage = QuranReciter.UNAVAILABLE_MESSAGE) }
+            audioPlayer.notifyReciterUnavailable(reciter.shortNameAr)
+            performHapticClick()
+            return
+        }
+
+        val pState = audioPlayer.playerState.value
+        if (pState.surahNumber == ayah.surahNumber && pState.verseNumber == ayah.verseNumber) {
+            if (pState.isPlaying) {
+                audioPlayer.pause()
+                return
+            } else if (!pState.isLoading) {
+                audioPlayer.resume()
+                return
+            } else {
+                return // Currently loading this verse, ignore redundant click
+            }
+        }
+
         val surah = _uiState.value.selectedSurah
         val currentAyahs = _uiState.value.currentAyahs
         audioPlayer.playAyah(
@@ -379,6 +539,7 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
             verseNumber = ayah.verseNumber,
             surahName = surah.nameEn,
             audioUrl = ayah.audioUrl,
+            reciterName = reciter.shortNameAr,
             onAyahCompleted = {
                 // Auto-advance to next Ayah if available
                 val nextIndex = currentAyahs.indexOfFirst { it.verseNumber == ayah.verseNumber } + 1
