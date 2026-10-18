@@ -66,6 +66,18 @@ enum class QuranReciter(
         }
     }
 
+    /**
+     * Constructs the high-fidelity direct CDN stream URL for the full Surah recitation.
+     */
+    fun getFullSurahAudioUrl(surahNumber: Int): String {
+        val formatted = String.format("%03d", surahNumber)
+        return when (this) {
+            MINSHAWI -> "https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/$formatted.mp3"
+            MAHER -> "https://cdn.mp3quran.net/audio/maher-muaiqly/r1/$formatted.mp3"
+            ALAFASY -> "https://cdn.mp3quran.net/audio/mishary-alafasy/r1/$formatted.mp3"
+        }
+    }
+
     companion object {
         const val UNAVAILABLE_MESSAGE = "القارئ غير متوفر فى تلك السورة"
 

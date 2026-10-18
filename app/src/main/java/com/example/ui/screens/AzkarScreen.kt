@@ -114,8 +114,8 @@ fun AzkarScreen(
         ) {
             Column {
                 Text(
-                    text = "REMEMBRANCE & TASBEEH",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    text = "حصن المسلم والأذكار المأثورة",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                     color = TextMuted
                 )
                 Text(
@@ -137,7 +137,7 @@ fun AzkarScreen(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "Reset Category",
+                    contentDescription = "إعادة ضبط العداد",
                     tint = TextMuted
                 )
             }
@@ -200,7 +200,7 @@ fun AzkarScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Dhikr ${uiState.currentAzkarIndex + 1} of ${items.size}",
+                    text = "الذكر ${uiState.currentAzkarIndex + 1} من ${items.size}",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = TextMuted
                 )
@@ -257,35 +257,17 @@ fun AzkarScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(
-                        text = currentItem.transliteration,
-                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
-                        color = TextMuted,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = currentItem.translation,
-                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(0x14FFFFFF))
                             .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "${currentItem.reference} • ${currentItem.benefit}",
+                            text = "${currentItem.category.titleAr} • التكرار المستحب: $target مرات",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted,
+                            color = AccentGold,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -312,7 +294,7 @@ fun AzkarScreen(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = if (isCompleted) "Target Completed • Dhikr Finished" else "Tactile Haptic Feedback Active",
+                    text = if (isCompleted) "اكتمل الذكر بحمد الله" else "الاهتزاز اللمسي مفعّل",
                     style = MaterialTheme.typography.labelSmall,
                     color = PureWhite
                 )
@@ -368,7 +350,7 @@ fun AzkarScreen(
                         color = if (isCompleted) PureWhite else VoidBlack
                     )
                     Text(
-                        text = "OF $target",
+                        text = "من $target",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = if (isCompleted) TextSecondary else Color(0xFF444444)
                     )
@@ -402,12 +384,12 @@ fun AzkarScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Previous",
+                            contentDescription = "السابق",
                             tint = if (uiState.currentAzkarIndex > 0) PureWhite else TextMuted
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Previous",
+                            text = "السابق",
                             color = if (uiState.currentAzkarIndex > 0) PureWhite else TextMuted,
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                         )
@@ -439,14 +421,14 @@ fun AzkarScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Next",
+                            text = "التالي",
                             color = if (uiState.currentAzkarIndex < items.size - 1) VoidBlack else TextMuted,
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next",
+                            contentDescription = "التالي",
                             tint = if (uiState.currentAzkarIndex < items.size - 1) VoidBlack else TextMuted
                         )
                     }

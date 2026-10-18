@@ -11,13 +11,13 @@ import java.util.Calendar
 
 /**
  * Handles playing the authentic prayer voice alerts by Muhammad M. Gowaida (محمد م. جويدة)
- * "اقتربت صلاة..." for all prayers:
- * - Fajr: اقتربت صلاة الفجر
- * - Dhuhr: اقتربت صلاة الظهر
- * - Asr: اقتربت صلاة العصر
- * - Maghrib: اقتربت صلاة المغرب
- * - Isha: اقتربت صلاة العشاء
- * - Jumu'ah (Friday): اقتربت صلاة الجمعة
+ * "صلاة..." for all prayers:
+ * - Fajr: صلاة الفجر
+ * - Dhuhr: صلاة الظهر
+ * - Asr: صلاة العصر
+ * - Maghrib: صلاة المغرب
+ * - Isha: صلاة العشاء
+ * - Jumu'ah (Friday): صلاة الجمعة
  */
 object PrayerAudioAlertPlayer {
 

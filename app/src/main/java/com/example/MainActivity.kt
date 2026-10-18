@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -64,6 +65,11 @@ class MainActivity : ComponentActivity() {
 
                 val uiState by viewModel.uiState.collectAsState()
 
+                // If user is on Settings, Calendar, etc., back gesture returns to Home/Prayer without exiting app
+                BackHandler(enabled = uiState.currentDestination != NoorDestination.PRAYER && !uiState.isReadingMode) {
+                    viewModel.setDestination(NoorDestination.PRAYER)
+                }
+
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
@@ -97,6 +103,7 @@ class MainActivity : ComponentActivity() {
                                 NoorDestination.DUAA -> DuaaScreen(viewModel, uiState)
                                 NoorDestination.QIBLA -> QiblaScreen(viewModel, uiState)
                                 NoorDestination.CALENDAR -> CalendarScreen(viewModel, uiState)
+                                NoorDestination.WIDGETS -> WidgetsScreen(viewModel, uiState)
                                 NoorDestination.SETTINGS -> SettingsScreen(viewModel, uiState)
                             }
                         }
@@ -121,6 +128,7 @@ class MainActivity : ComponentActivity() {
                 "duaa" -> viewModel.setDestination(NoorDestination.DUAA)
                 "qibla" -> viewModel.setDestination(NoorDestination.QIBLA)
                 "calendar", "ramadan" -> viewModel.setDestination(NoorDestination.CALENDAR)
+                "widgets" -> viewModel.setDestination(NoorDestination.WIDGETS)
                 "settings" -> viewModel.setDestination(NoorDestination.SETTINGS)
             }
         }

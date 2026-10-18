@@ -72,8 +72,8 @@ fun QiblaScreen(
         ) {
             Column {
                 Text(
-                    text = "QIBLA COMPASS",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    text = "بوصلة الكعبة المشرفة",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                     color = TextMuted
                 )
                 Text(
@@ -92,7 +92,7 @@ fun QiblaScreen(
                     .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "${qiblaState.distanceKm.toInt()} KM",
+                    text = "${qiblaState.distanceKm.toInt()} كم",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = PureWhite
                 )
@@ -121,8 +121,8 @@ fun QiblaScreen(
                     Icon(imageVector = Icons.Filled.CheckCircle, contentDescription = null, tint = PureWhite)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "ALIGNED DIRECTLY WITH THE HOLY KAABA",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                        text = "مُحاذٍ للكعبة المشرفة مباشرة",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
                         color = PureWhite
                     )
                 }
@@ -238,7 +238,7 @@ fun QiblaScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "QIBLA BEARING",
+                        text = "زاوية القبلة",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                         color = TextMuted
                     )
@@ -265,7 +265,7 @@ fun QiblaScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "CURRENT HEADING",
+                        text = "الاتجاه الحالي",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                         color = TextMuted
                     )
@@ -301,7 +301,7 @@ fun QiblaScreen(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "For optimal accuracy, place the device on a flat surface away from magnets or calibrate by moving in a figure-8.",
+                    text = "لأفضل دقة، ضع الهاتف على سطح مستوٍ بعيداً عن المعادن، أو قم بتحريكه على شكل الرقم ٨ لمعايرة الحساسات.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted
                 )

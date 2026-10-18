@@ -4,7 +4,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 private val NoorDarkColorScheme = darkColorScheme(
     primary = PureWhite,
@@ -44,6 +47,7 @@ private val NoorLightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFE5E5E5)
 )
 
+
 @Composable
 fun NoorTheme(
     darkTheme: Boolean = true, // Default to stunning Stitch OLED black theme
@@ -53,9 +57,12 @@ fun NoorTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+        typography = Typography
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            content()
+        }
+    }
 }
 
 @Composable

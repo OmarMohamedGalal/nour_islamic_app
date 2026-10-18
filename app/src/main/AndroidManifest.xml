@@ -248,6 +248,53 @@
                 android:resource="@xml/widget_next_prayer_arabic_info" />
         </receiver>
 
+        <!-- 15. Capsule Day of Week Widget (1x2) -->
+        <receiver
+            android:name=".widget.CapsuleDayWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_capsule_day">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_capsule_day_info" />
+        </receiver>
+
+        <!-- 16. Capsule Gregorian Date Widget (1x2) -->
+        <receiver
+            android:name=".widget.CapsuleGregorianWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_capsule_gregorian">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_capsule_gregorian_info" />
+        </receiver>
+
+        <!-- 17. Capsule Hijri Date Widget (1x2) -->
+        <receiver
+            android:name=".widget.CapsuleHijriWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_capsule_hijri">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_capsule_hijri_info" />
+        </receiver>
+
+        <!-- Calendar Trampoline Activity to launch device calendar app (e.g. Xiaomi Calendar) -->
+        <activity
+            android:name=".widget.CalendarTrampolineActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+
         <!-- Periodic & Time-Based Widget Updater Receiver -->
         <receiver
             android:name=".widget.WidgetAlarmReceiver"

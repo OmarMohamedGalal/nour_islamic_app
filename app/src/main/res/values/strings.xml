@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">Noor</string>
+    <string name="app_name">نور</string>
     <string name="app_name_ar">نور</string>
 
     <!-- Navigation -->
-    <string name="nav_now">Now</string>
-    <string name="nav_prayer">Prayer</string>
-    <string name="nav_qibla">Qibla</string>
-    <string name="nav_quran">Quran</string>
-    <string name="nav_config">Config</string>
+    <string name="nav_now">الآن</string>
+    <string name="nav_prayer">الصلاة</string>
+    <string name="nav_qibla">القبلة</string>
+    <string name="nav_quran">القرآن</string>
+    <string name="nav_config">الإعدادات</string>
 
     <!-- Widget labels -->
     <string name="widget_next_prayer">Noor: Next Prayer Countdown</string>
@@ -24,4 +24,12 @@
     <string name="widget_quran_verse">Noor: Quran Verse of the Day</string>
     <string name="widget_prayer_list">Noor: Compact Prayer Times</string>
     <string name="widget_next_prayer_arabic">Noor: Next Prayer Arabic Banner</string>
+
+    <!-- Capsule Calendar Widgets (1x2) -->
+    <string name="widget_capsule_day">اليوم • Day of Week (Capsule)</string>
+    <string name="widget_capsule_day_desc">ودجت اليوم الأنيق بتصميم كبسولة وخط عربي أصيل (1x2)</string>
+    <string name="widget_capsule_gregorian">التاريخ الميلادي • Gregorian Date (Capsule)</string>
+    <string name="widget_capsule_gregorian_desc">ودجت الشهر واليوم الميلادي بتصميم كبسولة داكنة (1x2)</string>
+    <string name="widget_capsule_hijri">التاريخ الهجري • Hijri Date (Capsule)</string>
+    <string name="widget_capsule_hijri_desc">ودجت الشهر واليوم الهجري بتصميم كبسولة فضية (1x2)</string>
 </resources>

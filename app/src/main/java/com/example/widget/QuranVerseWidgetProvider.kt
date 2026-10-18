@@ -82,10 +82,6 @@ class QuranVerseWidgetProvider : AppWidgetProvider() {
 
         fun updateWidget(context: Context, appWidgetManager: AppWidgetManager? = null) {
             val manager = appWidgetManager ?: AppWidgetManager.getInstance(context)
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val index = prefs.getInt(KEY_AYAH_INDEX, 0) % AYAT.size
-            val currentAyah = AYAT[index]
-
             val nextAyahIntent = Intent(context, QuranVerseWidgetProvider::class.java).apply {
                 action = ACTION_NEXT_AYAH
             }
@@ -96,10 +92,10 @@ class QuranVerseWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val bitmap = UniversalWidgetRenderer.renderWidget(context, "quran_verse")
+
             val views = RemoteViews(context.packageName, R.layout.widget_quran_verse).apply {
-                setTextViewText(R.id.widget_ayah_arabic, currentAyah.arabicWithBrackets)
-                setTextViewText(R.id.widget_ayah_translation, currentAyah.translation)
-                // When tapped anywhere on the widget: display another Ayah!
+                setImageViewBitmap(R.id.widget_image, bitmap)
                 setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             }
 

@@ -41,6 +41,7 @@ enum class NoorDestination(val titleEn: String, val titleAr: String) {
     DUAA("Duaa", "الأدعية"),
     QIBLA("Qibla", "القبلة"),
     CALENDAR("Calendar", "التقويم"),
+    WIDGETS("Widgets", "الودجات"),
     SETTINGS("Settings", "الإعدادات")
 }
 
@@ -114,9 +115,24 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         val initialReciter = QuranReciter.fromId(initialReciterId)
         val initialSoundOptionId = initialPrefs.getString("prayer_sound_option", "calm_prayer") ?: "calm_prayer"
         val initialSoundOption = NotificationSoundOption.fromId(initialSoundOptionId)
+        val initialFajr = initialPrefs.getBoolean("pref_notif_fajr", true)
+        val initialDhuhr = initialPrefs.getBoolean("pref_notif_dhuhr", true)
+        val initialAsr = initialPrefs.getBoolean("pref_notif_asr", true)
+        val initialMaghrib = initialPrefs.getBoolean("pref_notif_maghrib", true)
+        val initialIsha = initialPrefs.getBoolean("pref_notif_isha", true)
 
         _uiState.update {
             it.copy(
+                userSettings = it.userSettings.copy(
+                    fajrNotification = initialFajr,
+                    dhuhrNotification = initialDhuhr,
+                    asrNotification = initialAsr,
+                    maghribNotification = initialMaghrib,
+                    ishaNotification = initialIsha,
+                    hijriAdjustmentDays = initialAdjustment,
+                    quranReciterId = initialReciter.id,
+                    adhanSound = initialSoundOption.id
+                ),
                 hijriAdjustmentDays = initialAdjustment,
                 selectedReciter = initialReciter,
                 selectedPrayerSoundOption = initialSoundOption
@@ -141,6 +157,11 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
                         .putInt("hijri_adjustment", adjustment)
                         .putString("quran_reciter", reciter.id)
                         .putString("prayer_sound_option", soundOption.id)
+                        .putBoolean("pref_notif_fajr", settings.fajrNotification)
+                        .putBoolean("pref_notif_dhuhr", settings.dhuhrNotification)
+                        .putBoolean("pref_notif_asr", settings.asrNotification)
+                        .putBoolean("pref_notif_maghrib", settings.maghribNotification)
+                        .putBoolean("pref_notif_isha", settings.ishaNotification)
                         .apply()
 
                     _uiState.update {
@@ -218,8 +239,8 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // Load Quran initial Surah
-        loadSurah(1)
+        // Preload Quran Surah without forcing reading mode
+        preloadSurah(1)
 
         // Refresh Calendar & Holidays
         refreshCalendar()
@@ -237,7 +258,14 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setDestination(dest: NoorDestination) {
-        _uiState.update { it.copy(currentDestination = dest) }
+        _uiState.update { 
+            if (dest == NoorDestination.QURAN) {
+                // When clicking Quran page, open select surah directory, not al-fatihah
+                it.copy(currentDestination = dest, isReadingMode = false)
+            } else {
+                it.copy(currentDestination = dest)
+            }
+        }
         if (dest == NoorDestination.QIBLA) {
             qiblaSensorManager.start()
         } else {
@@ -345,18 +373,44 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleNotification(prayerType: PrayerType) {
+        val s = _uiState.value.userSettings
+        val updated = when (prayerType) {
+            PrayerType.FAJR -> s.copy(fajrNotification = !s.fajrNotification)
+            PrayerType.DHUHR -> s.copy(dhuhrNotification = !s.dhuhrNotification)
+            PrayerType.ASR -> s.copy(asrNotification = !s.asrNotification)
+            PrayerType.MAGHRIB -> s.copy(maghribNotification = !s.maghribNotification)
+            PrayerType.ISHA -> s.copy(ishaNotification = !s.ishaNotification)
+            else -> s
+        }
+
+        // Optimistically update uiState immediately
+        _uiState.update { it.copy(userSettings = updated) }
+
+        val app = getApplication<Application>()
+        app.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("pref_notif_fajr", updated.fajrNotification)
+            .putBoolean("pref_notif_dhuhr", updated.dhuhrNotification)
+            .putBoolean("pref_notif_asr", updated.asrNotification)
+            .putBoolean("pref_notif_maghrib", updated.maghribNotification)
+            .putBoolean("pref_notif_isha", updated.ishaNotification)
+            .apply()
+
+        val isNowDisabled = when (prayerType) {
+            PrayerType.FAJR -> !updated.fajrNotification
+            PrayerType.DHUHR -> !updated.dhuhrNotification
+            PrayerType.ASR -> !updated.asrNotification
+            PrayerType.MAGHRIB -> !updated.maghribNotification
+            PrayerType.ISHA -> !updated.ishaNotification
+            else -> false
+        }
+        if (isNowDisabled) {
+            AdhanAlarmScheduler.cancelPrayerAlarms(app, prayerType)
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
-            val s = _uiState.value.userSettings
-            val updated = when (prayerType) {
-                PrayerType.FAJR -> s.copy(fajrNotification = !s.fajrNotification)
-                PrayerType.DHUHR -> s.copy(dhuhrNotification = !s.dhuhrNotification)
-                PrayerType.ASR -> s.copy(asrNotification = !s.asrNotification)
-                PrayerType.MAGHRIB -> s.copy(maghribNotification = !s.maghribNotification)
-                PrayerType.ISHA -> s.copy(ishaNotification = !s.ishaNotification)
-                else -> s
-            }
             repository.saveSettings(updated)
-            AdhanAlarmScheduler.scheduleNextPrayers(getApplication())
+            AdhanAlarmScheduler.scheduleNextPrayers(app)
         }
     }
 
@@ -423,6 +477,19 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // QURAN ACTIONS
+    fun preloadSurah(surahNumber: Int = 1) {
+        val surah = QuranRepository.SURAHS.firstOrNull { it.number == surahNumber } ?: QuranRepository.SURAHS[0]
+        val reciter = _uiState.value.selectedReciter
+        val ayahs = QuranRepository.getAyahsForSurah(surahNumber, getApplication(), reciter)
+        _uiState.update {
+            it.copy(
+                selectedSurah = surah,
+                currentAyahs = ayahs,
+                isReadingMode = false
+            )
+        }
+    }
+
     fun loadSurah(surahNumber: Int, targetVerse: Int = 1) {
         val surah = QuranRepository.SURAHS.firstOrNull { it.number == surahNumber } ?: QuranRepository.SURAHS[0]
         val reciter = _uiState.value.selectedReciter
@@ -444,6 +511,20 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.updateReadingPosition(surah.number, targetVerse, surah.nameEn, surah.nameAr)
             WidgetUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun nextSurah() {
+        val currentNumber = _uiState.value.selectedSurah.number
+        if (currentNumber < 114) {
+            loadSurah(currentNumber + 1)
+        }
+    }
+
+    fun previousSurah() {
+        val currentNumber = _uiState.value.selectedSurah.number
+        if (currentNumber > 1) {
+            loadSurah(currentNumber - 1)
         }
     }
 
@@ -476,6 +557,12 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val cur = _uiState.value.userSettings
             repository.saveSettings(cur.copy(quranReciterId = reciter.id))
+        }
+
+        // If audio is currently playing, switch stream to new reciter for the current surah
+        val pState = audioPlayer.playerState.value
+        if (pState.isPlaying && pState.isFullSurah && pState.surahNumber == _uiState.value.selectedSurah.number) {
+            playSurahAudio(_uiState.value.selectedSurah)
         }
     }
 
@@ -510,9 +597,13 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun playAyahAudio(ayah: Ayah) {
+    /**
+     * Plays the complete Surah recitation for the selected reciter.
+     * When user clicks the play button in the reader, the full Surah is played continuously.
+     */
+    fun playSurahAudio(surah: Surah = _uiState.value.selectedSurah) {
         val reciter = _uiState.value.selectedReciter
-        if (!reciter.isSurahAvailable(ayah.surahNumber)) {
+        if (!reciter.isSurahAvailable(surah.number)) {
             _uiState.update { it.copy(reciterErrorMessage = QuranReciter.UNAVAILABLE_MESSAGE) }
             audioPlayer.notifyReciterUnavailable(reciter.shortNameAr)
             performHapticClick()
@@ -520,34 +611,31 @@ class NoorViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val pState = audioPlayer.playerState.value
-        if (pState.surahNumber == ayah.surahNumber && pState.verseNumber == ayah.verseNumber) {
+        if (pState.surahNumber == surah.number && pState.isFullSurah) {
             if (pState.isPlaying) {
                 audioPlayer.pause()
                 return
             } else if (!pState.isLoading) {
                 audioPlayer.resume()
                 return
-            } else {
-                return // Currently loading this verse, ignore redundant click
             }
         }
 
-        val surah = _uiState.value.selectedSurah
-        val currentAyahs = _uiState.value.currentAyahs
-        audioPlayer.playAyah(
-            surahNumber = ayah.surahNumber,
-            verseNumber = ayah.verseNumber,
-            surahName = surah.nameEn,
-            audioUrl = ayah.audioUrl,
-            reciterName = reciter.shortNameAr,
-            onAyahCompleted = {
-                // Auto-advance to next Ayah if available
-                val nextIndex = currentAyahs.indexOfFirst { it.verseNumber == ayah.verseNumber } + 1
-                if (nextIndex in currentAyahs.indices) {
-                    playAyahAudio(currentAyahs[nextIndex])
-                }
-            }
+        val audioUrl = reciter.getFullSurahAudioUrl(surah.number)
+        audioPlayer.playFullSurah(
+            surahNumber = surah.number,
+            surahName = surah.nameAr,
+            surahNameEn = surah.nameEn,
+            audioUrl = audioUrl,
+            reciterName = reciter.nameAr
         )
+    }
+
+    /**
+     * When user clicks any play button in the reader, play full surah recitation as requested.
+     */
+    fun playAyahAudio(ayah: Ayah) {
+        playSurahAudio(_uiState.value.selectedSurah)
     }
 
     // AZKAR ACTIONS

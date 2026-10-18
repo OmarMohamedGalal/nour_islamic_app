@@ -38,7 +38,9 @@ class NoorApplication : Application() {
         }
         registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
+                java.util.TimeZone.setDefault(null)
                 WidgetUpdater.updateAllWidgetsSync(context)
+                WidgetUpdater.scheduleMidnightCalendarUpdate(context)
             }
         }, filter)
     }

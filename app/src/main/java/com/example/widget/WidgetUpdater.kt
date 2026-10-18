@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.SystemClock
 import android.widget.RemoteViews
 import com.example.MainActivity
@@ -52,6 +53,8 @@ object WidgetUpdater {
                 15 * 60 * 1000L,
                 pendingIntent
             )
+            // Schedule exact midnight calendar rollover (0 battery impact)
+            scheduleMidnightCalendarUpdate(context)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -233,6 +236,9 @@ object WidgetUpdater {
             // 14. Next Prayer Arabic Banner Widget
             updateNextPrayerArabic(context, manager, nextObligatory.prayer.time.format(militaryFmt), countdownStr, nextObligatory.prayer.type.displayNameAr)
 
+            // 15, 16, 17: Capsule Calendar Widgets (Day of week, Gregorian, Hijri - 1x2)
+            updateCapsuleWidgets(context, manager)
+
             // Schedule precision alarm for exact prayer change
             scheduleExactPrayerUpdate(context, nextObligatory.prayer.time)
         } catch (e: Exception) {
@@ -254,210 +260,110 @@ object WidgetUpdater {
         )
     }
 
-    private fun updateNextPrayer(context: Context, manager: AppWidgetManager, name: String, time: String, countdown: String, city: String) {
-        val views = RemoteViews(context.packageName, R.layout.widget_next_prayer).apply {
-            setTextViewText(R.id.widget_prayer_name, name)
-            setTextViewText(R.id.widget_prayer_time, time)
-            setTextViewText(R.id.widget_prayer_countdown, countdown)
-            setTextViewText(R.id.widget_city, city)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 101))
+    private fun updateUniversalWidget(
+        context: Context,
+        manager: AppWidgetManager,
+        providerClass: Class<*>,
+        layoutRes: Int,
+        widgetId: String,
+        deepLink: String,
+        requestCode: Int
+    ) {
+        try {
+            val component = ComponentName(context, providerClass)
+            val ids = manager.getAppWidgetIds(component)
+            if (ids.isEmpty()) return
+
+            val prefs = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            val hijriAdjustment = prefs.getInt("hijri_adjustment", -2).toLong()
+            val today = LocalDate.now()
+            val hijri = CalendarRepository.getHijriDate(today, hijriAdjustment)
+
+            val arabicFont = prefs.getString("widget_arabic_font_$widgetId", "taleed_thuluth") ?: "taleed_thuluth"
+            val numberFont = prefs.getString("widget_number_font_$widgetId", "oswald") ?: "oswald"
+            val bgStyle = prefs.getString("widget_bg_style_$widgetId", "default") ?: "default"
+            val colorInt = prefs.getInt("widget_color_$widgetId", android.graphics.Color.parseColor("#26364A"))
+
+            val bitmap = UniversalWidgetRenderer.renderWidget(
+                context = context,
+                widgetId = widgetId,
+                today = today,
+                hijriDay = hijri.day,
+                hijriMonth = hijri.month,
+                arabicFontKey = arabicFont,
+                numberFontKey = numberFont,
+                bgStyle = bgStyle,
+                patternColor = colorInt
+            )
+
+            val views = RemoteViews(context.packageName, layoutRes).apply {
+                setImageViewBitmap(R.id.widget_image, bitmap)
+                setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, deepLink, requestCode))
+            }
+            manager.updateAppWidget(ids, views)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        val component = ComponentName(context, NextPrayerWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+    }
+
+    private fun updateNextPrayer(context: Context, manager: AppWidgetManager, name: String, time: String, countdown: String, city: String) {
+        updateUniversalWidget(context, manager, NextPrayerWidgetProvider::class.java, R.layout.widget_next_prayer, "next_prayer_pill", "noor://prayer", 101)
     }
 
     private fun updateFullSchedule(context: Context, manager: AppWidgetManager, s: DayPrayerSchedule, hijriSub: String) {
-        val fmt = DateTimeFormatter.ofPattern("h:mm", Locale.ENGLISH)
-        val views = RemoteViews(context.packageName, R.layout.widget_full_schedule).apply {
-            setTextViewText(R.id.widget_hijri_sub, hijriSub)
-            setTextViewText(R.id.p_fajr, s.fajr.format(fmt))
-            setTextViewText(R.id.p_dhuhr, s.dhuhr.format(fmt))
-            setTextViewText(R.id.p_asr, s.asr.format(fmt))
-            setTextViewText(R.id.p_maghrib, s.maghrib.format(fmt))
-            setTextViewText(R.id.p_isha, s.isha.format(fmt))
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 102))
-        }
-        val component = ComponentName(context, FullScheduleWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, FullScheduleWidgetProvider::class.java, R.layout.widget_full_schedule, "full_schedule", "noor://prayer", 102)
     }
 
     private fun updateHijriDate(context: Context, manager: AppWidgetManager, day: Int, monthYear: String, gregorianFormatted: String) {
-        val views = RemoteViews(context.packageName, R.layout.widget_hijri_date).apply {
-            setTextViewText(R.id.widget_hijri_day_num, day.toString())
-            setTextViewText(R.id.widget_hijri_month_year, monthYear)
-            setTextViewText(R.id.widget_gregorian_date, gregorianFormatted)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://calendar", 103))
-        }
-        val component = ComponentName(context, HijriDateWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, HijriDateWidgetProvider::class.java, R.layout.widget_hijri_date, "hijri_date_card", "noor://calendar", 103)
     }
 
     private fun updateQibla(context: Context, manager: AppWidgetManager, bearing: Float) {
-        val views = RemoteViews(context.packageName, R.layout.widget_qibla).apply {
-            setTextViewText(R.id.widget_qibla_deg, "${bearing.toInt()}°")
-            setTextViewText(R.id.widget_qibla_dir, "to Holy Kaaba")
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://qibla", 104))
-        }
-        val component = ComponentName(context, QiblaWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, QiblaWidgetProvider::class.java, R.layout.widget_qibla, "qibla_compass", "noor://qibla", 104)
     }
 
     private fun updateQuranContinue(context: Context, manager: AppWidgetManager, surah: String, ayah: Int) {
-        val views = RemoteViews(context.packageName, R.layout.widget_quran).apply {
-            setTextViewText(R.id.widget_quran_surah, surah)
-            setTextViewText(R.id.widget_quran_ayah, "Ayah $ayah")
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://quran", 105))
-        }
-        val component = ComponentName(context, QuranContinueWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, QuranContinueWidgetProvider::class.java, R.layout.widget_quran, "quran_continue", "noor://quran", 105)
     }
 
     private fun updateAzkar(context: Context, manager: AppWidgetManager) {
-        val prefs = context.getSharedPreferences("azkar_widget_prefs", Context.MODE_PRIVATE)
-        val count = prefs.getInt("azkar_count", 33)
-
-        val incrementIntent = Intent(context, AzkarCounterWidgetProvider::class.java).apply {
-            action = "com.example.noor.ACTION_AZKAR_INCREMENT"
-        }
-        val incrementPendingIntent = PendingIntent.getBroadcast(
-            context,
-            201,
-            incrementIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val views = RemoteViews(context.packageName, R.layout.widget_azkar).apply {
-            setTextViewText(R.id.widget_azkar_count, count.toString())
-            setOnClickPendingIntent(R.id.widget_azkar_tap, incrementPendingIntent)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://azkar", 106))
-        }
-        val component = ComponentName(context, AzkarCounterWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, AzkarCounterWidgetProvider::class.java, R.layout.widget_azkar, "azkar_counter", "noor://azkar", 106)
     }
 
     private fun updateDuaa(context: Context, manager: AppWidgetManager, ar: String, en: String, cat: String) {
-        val views = RemoteViews(context.packageName, R.layout.widget_duaa).apply {
-            setTextViewText(R.id.widget_duaa_ar, ar)
-            setTextViewText(R.id.widget_duaa_en, en)
-            setTextViewText(R.id.widget_duaa_category, cat)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://duaa", 107))
-        }
-        val component = ComponentName(context, DuaaOfTheDayWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, DuaaOfTheDayWidgetProvider::class.java, R.layout.widget_duaa, "duaa_of_the_day", "noor://duaa", 107)
     }
 
     private fun updateRamadan(context: Context, manager: AppWidgetManager, countdown: String, maghrib: String) {
-        val views = RemoteViews(context.packageName, R.layout.widget_ramadan).apply {
-            setTextViewText(R.id.widget_ramadan_countdown, countdown)
-            setTextViewText(R.id.widget_ramadan_target_time, "Maghrib at $maghrib")
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://ramadan", 108))
-        }
-        val component = ComponentName(context, RamadanCountdownWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, RamadanCountdownWidgetProvider::class.java, R.layout.widget_ramadan, "ramadan_countdown", "noor://ramadan", 108)
     }
 
     private fun updateHoliday(context: Context, manager: AppWidgetManager, name: String, countdown: String, hijriDate: String) {
-        val views = RemoteViews(context.packageName, R.layout.widget_holiday).apply {
-            setTextViewText(R.id.widget_holiday_name, name)
-            setTextViewText(R.id.widget_holiday_countdown, countdown)
-            setTextViewText(R.id.widget_holiday_hijri, hijriDate)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://calendar", 109))
-        }
-        val component = ComponentName(context, IslamicHolidayWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, IslamicHolidayWidgetProvider::class.java, R.layout.widget_holiday, "islamic_holiday", "noor://calendar", 109)
     }
 
     private fun updatePrayerStreak(context: Context, manager: AppWidgetManager, count: Int, f: Boolean, d: Boolean, a: Boolean, m: Boolean, i: Boolean) {
-        val views = RemoteViews(context.packageName, R.layout.widget_prayer_streak).apply {
-            setTextViewText(R.id.widget_prayers_done_text, "$count of 5 Completed")
-            setTextColor(R.id.dot_fajr, if (f) 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
-            setTextColor(R.id.dot_dhuhr, if (d) 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
-            setTextColor(R.id.dot_asr, if (a) 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
-            setTextColor(R.id.dot_maghrib, if (m) 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
-            setTextColor(R.id.dot_isha, if (i) 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 110))
-        }
-        val component = ComponentName(context, PrayerStreakWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, PrayerStreakWidgetProvider::class.java, R.layout.widget_prayer_streak, "prayer_streak", "noor://prayer", 110)
     }
 
-    // 11. Horizontal Prayer Bar Widget (Image 1)
     private fun updatePrayerBar(
         context: Context,
         manager: AppWidgetManager,
         s: DayPrayerSchedule,
         activeType: PrayerType
     ) {
-        val fmt = DateTimeFormatter.ofPattern("hh:mm", Locale.ENGLISH)
-        val views = RemoteViews(context.packageName, R.layout.widget_prayer_bar).apply {
-            val prayers = listOf(
-                Triple(PrayerType.FAJR, s.fajr, Triple(R.id.dot_bar_fajr, R.id.name_bar_fajr, R.id.time_bar_fajr)),
-                Triple(PrayerType.DHUHR, s.dhuhr, Triple(R.id.dot_bar_dhuhr, R.id.name_bar_dhuhr, R.id.time_bar_dhuhr)),
-                Triple(PrayerType.ASR, s.asr, Triple(R.id.dot_bar_asr, R.id.name_bar_asr, R.id.time_bar_asr)),
-                Triple(PrayerType.MAGHRIB, s.maghrib, Triple(R.id.dot_bar_maghrib, R.id.name_bar_maghrib, R.id.time_bar_maghrib)),
-                Triple(PrayerType.ISHA, s.isha, Triple(R.id.dot_bar_isha, R.id.name_bar_isha, R.id.time_bar_isha))
-            )
-
-            for ((type, time, ids) in prayers) {
-                val (dotId, nameId, timeId) = ids
-                val isActive = (type == activeType)
-                setTextViewText(timeId, time.format(fmt))
-                if (isActive) {
-                    setImageViewResource(dotId, R.drawable.ic_dot_active)
-                    setTextColor(nameId, 0xFFFFFFFF.toInt())
-                    setTextColor(timeId, 0xFFFFFFFF.toInt())
-                } else {
-                    setImageViewResource(dotId, R.drawable.ic_dot_inactive)
-                    setTextColor(nameId, 0xFF8E8E93.toInt())
-                    setTextColor(timeId, 0xFF8E8E93.toInt())
-                }
-            }
-
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 111))
-        }
-        val component = ComponentName(context, PrayerBarWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, PrayerBarWidgetProvider::class.java, R.layout.widget_prayer_bar, "prayer_bar", "noor://prayer", 111)
     }
 
-    // 13. Compact Prayer List Widget (Image 3)
     private fun updatePrayerList(
         context: Context,
         manager: AppWidgetManager,
         s: DayPrayerSchedule,
         activeType: PrayerType
     ) {
-        val fmt = DateTimeFormatter.ofPattern("hh:mm", Locale.ENGLISH)
-        val views = RemoteViews(context.packageName, R.layout.widget_prayer_list).apply {
-            val rows = listOf(
-                Triple(PrayerType.FAJR, s.fajr, Triple(R.id.row_fajr, R.id.name_fajr, R.id.time_fajr)),
-                Triple(PrayerType.DHUHR, s.dhuhr, Triple(R.id.row_dhuhr, R.id.name_dhuhr, R.id.time_dhuhr)),
-                Triple(PrayerType.ASR, s.asr, Triple(R.id.row_asr, R.id.name_asr, R.id.time_asr)),
-                Triple(PrayerType.MAGHRIB, s.maghrib, Triple(R.id.row_maghrib, R.id.name_maghrib, R.id.time_maghrib)),
-                Triple(PrayerType.ISHA, s.isha, Triple(R.id.row_isha, R.id.name_isha, R.id.time_isha))
-            )
-
-            for ((type, time, ids) in rows) {
-                val (rowId, nameId, timeId) = ids
-                val isActive = (type == activeType)
-                setTextViewText(timeId, time.format(fmt))
-                if (isActive) {
-                    setInt(rowId, "setBackgroundResource", R.drawable.bg_prayer_highlight)
-                    setTextColor(nameId, 0xFFFFFFFF.toInt())
-                    setTextColor(timeId, 0xFFFFFFFF.toInt())
-                } else {
-                    setInt(rowId, "setBackgroundResource", 0)
-                    setTextColor(nameId, 0xFF8E8E93.toInt())
-                    setTextColor(timeId, 0xFF8E8E93.toInt())
-                }
-            }
-
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 112))
-        }
-        val component = ComponentName(context, PrayerListWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+        updateUniversalWidget(context, manager, PrayerListWidgetProvider::class.java, R.layout.widget_prayer_list, "prayer_list", "noor://prayer", 112)
     }
 
-    // 14. Next Prayer Arabic Banner Widget (Image 4)
     private fun updateNextPrayerArabic(
         context: Context,
         manager: AppWidgetManager,
@@ -465,13 +371,119 @@ object WidgetUpdater {
         countdown: String,
         arabicName: String
     ) {
-        val views = RemoteViews(context.packageName, R.layout.widget_next_prayer_arabic).apply {
-            setTextViewText(R.id.widget_prayer_time, time)
-            setTextViewText(R.id.widget_prayer_countdown, countdown)
-            setTextViewText(R.id.widget_prayer_arabic_name, arabicName)
-            setOnClickPendingIntent(R.id.widget_root, createDeepLinkPendingIntent(context, "noor://prayer", 113))
+        updateUniversalWidget(context, manager, NextPrayerArabicWidgetProvider::class.java, R.layout.widget_next_prayer_arabic, "next_prayer_arabic", "noor://prayer", 113)
+    }
+
+    // 15, 16, 17. Capsule Calendar Widgets (1x2) - Day of Week, Gregorian Date, Hijri Date
+    fun updateCapsuleWidgets(context: Context, appWidgetManager: AppWidgetManager? = null) {
+        // Clear cached JVM timezone to guarantee synchronization with real phone timezone
+        java.util.TimeZone.setDefault(null)
+        val manager = appWidgetManager ?: AppWidgetManager.getInstance(context)
+        updateCapsuleDayWidget(context, manager)
+        updateCapsuleGregorianWidget(context, manager)
+        updateCapsuleHijriWidget(context, manager)
+        scheduleMidnightCalendarUpdate(context)
+    }
+
+    fun updateCapsuleDayWidget(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray? = null) {
+        try {
+            val component = ComponentName(context, CapsuleDayWidgetProvider::class.java)
+            val ids = appWidgetIds ?: manager.getAppWidgetIds(component)
+            if (ids.isEmpty()) return
+
+            java.util.TimeZone.setDefault(null)
+            val today = LocalDate.now(ZoneId.systemDefault())
+            val bitmap = CapsuleWidgetRenderer.renderDayOfWeek(context, today.dayOfWeek)
+            val calendarPendingIntent = CalendarLauncher.getLaunchPendingIntent(context, 701)
+
+            val views = RemoteViews(context.packageName, R.layout.widget_capsule_day).apply {
+                setImageViewBitmap(R.id.widget_capsule_image, bitmap)
+                setOnClickPendingIntent(R.id.widget_capsule_root, calendarPendingIntent)
+            }
+            manager.updateAppWidget(ids, views)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        val component = ComponentName(context, NextPrayerArabicWidgetProvider::class.java)
-        manager.updateAppWidget(component, views)
+    }
+
+    fun updateCapsuleGregorianWidget(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray? = null) {
+        try {
+            val component = ComponentName(context, CapsuleGregorianWidgetProvider::class.java)
+            val ids = appWidgetIds ?: manager.getAppWidgetIds(component)
+            if (ids.isEmpty()) return
+
+            java.util.TimeZone.setDefault(null)
+            val today = LocalDate.now(ZoneId.systemDefault())
+            val bitmap = CapsuleWidgetRenderer.renderGregorian(context, today.dayOfMonth, today.monthValue)
+            val calendarPendingIntent = CalendarLauncher.getLaunchPendingIntent(context, 702)
+
+            val views = RemoteViews(context.packageName, R.layout.widget_capsule_gregorian).apply {
+                setImageViewBitmap(R.id.widget_capsule_image, bitmap)
+                setOnClickPendingIntent(R.id.widget_capsule_root, calendarPendingIntent)
+            }
+            manager.updateAppWidget(ids, views)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun updateCapsuleHijriWidget(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray? = null) {
+        try {
+            val component = ComponentName(context, CapsuleHijriWidgetProvider::class.java)
+            val ids = appWidgetIds ?: manager.getAppWidgetIds(component)
+            if (ids.isEmpty()) return
+
+            java.util.TimeZone.setDefault(null)
+            val prefs = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+            val hijriAdjustment = prefs.getInt("hijri_adjustment", -2).toLong()
+            val today = LocalDate.now(ZoneId.systemDefault())
+            val hijri = CalendarRepository.getHijriDate(today, hijriAdjustment)
+
+            val bitmap = CapsuleWidgetRenderer.renderHijri(context, hijri.day, hijri.month)
+            val calendarPendingIntent = CalendarLauncher.getLaunchPendingIntent(context, 703)
+
+            val views = RemoteViews(context.packageName, R.layout.widget_capsule_hijri).apply {
+                setImageViewBitmap(R.id.widget_capsule_image, bitmap)
+                setOnClickPendingIntent(R.id.widget_capsule_root, calendarPendingIntent)
+            }
+            manager.updateAppWidget(ids, views)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun scheduleMidnightCalendarUpdate(context: Context) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+            val intent = Intent(context, WidgetAlarmReceiver::class.java).apply {
+                action = "com.example.noor.ACTION_UPDATE_WIDGETS"
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                996,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            java.util.TimeZone.setDefault(null)
+            val zoneId = ZoneId.systemDefault()
+            val nextMidnight = LocalDate.now(zoneId).plusDays(1).atStartOfDay(zoneId)
+            val triggerMillis = nextMidnight.toInstant().toEpochMilli() + 500L // 500ms after midnight
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC,
+                    triggerMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC,
+                    triggerMillis,
+                    pendingIntent
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

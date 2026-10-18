@@ -62,8 +62,8 @@ fun DuaaScreen(
                     .padding(vertical = 8.dp)
             ) {
                 Text(
-                    text = "SUPPLICATIONS & DUAAS",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    text = "أدعية مأثورة من الكتاب والسنة",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                     color = TextMuted
                 )
                 Text(
@@ -82,14 +82,14 @@ fun DuaaScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("duaa_search_field"),
-                placeholder = { Text("Search by keywords, translation, or title...", color = TextMuted) },
+                placeholder = { Text("ابحث في الأدعية والتضرعات...", color = TextMuted) },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Filled.Search, contentDescription = "Search", tint = TextMuted)
+                    Icon(imageVector = Icons.Filled.Search, contentDescription = "بحث", tint = TextMuted)
                 },
                 trailingIcon = {
                     if (uiState.duaaSearchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setDuaaSearch("") }) {
-                            Icon(imageVector = Icons.Filled.Clear, contentDescription = "Clear", tint = TextMuted)
+                            Icon(imageVector = Icons.Filled.Clear, contentDescription = "مسح", tint = TextMuted)
                         }
                     }
                 },
@@ -124,7 +124,7 @@ fun DuaaScreen(
                             .testTag("duaa_cat_${cat.id}")
                     ) {
                         Text(
-                            text = cat.titleEn,
+                            text = cat.titleAr,
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             ),
@@ -146,7 +146,7 @@ fun DuaaScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No supplications found for '${uiState.duaaSearchQuery}'.",
+                        text = "لم يتم العثور على أدعية مطابقة لـ '${uiState.duaaSearchQuery}'.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextMuted
                     )
@@ -163,16 +163,16 @@ fun DuaaScreen(
                     onShare = {
                         val sendIntent = Intent().apply {
                             action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, "${duaa.titleEn}\n\n${duaa.arabicText}\n\n${duaa.translation}\n\n(${duaa.reference}) - Shared via Noor")
+                            putExtra(Intent.EXTRA_TEXT, "${duaa.titleAr}\n\n${duaa.arabicText}\n\n(${duaa.reference}) - مشاركة عبر تطبيق نور")
                             type = "text/plain"
                         }
-                        context.startActivity(Intent.createChooser(sendIntent, "Share Duaa"))
+                        context.startActivity(Intent.createChooser(sendIntent, "مشاركة الدعاء"))
                     },
                     onCopy = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip = ClipData.newPlainText("Duaa", "${duaa.arabicText}\n\n${duaa.translation}\n(${duaa.reference})")
+                        val clip = ClipData.newPlainText("Duaa", "${duaa.arabicText}\n(${duaa.reference})")
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, "Duaa copied to clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "تم نسخ الدعاء إلى الحافظة بنجاح", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -213,24 +213,24 @@ fun DuaaCard(
                     border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
                 ) {
                     Text(
-                        text = duaa.category.titleEn.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.5.sp),
-                        color = TextMuted,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        text = duaa.category.titleAr,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                        color = AccentGold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
 
                 Row {
                     IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) {
-                        Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = TextMuted, modifier = Modifier.size(18.dp))
+                        Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "نسخ", tint = TextMuted, modifier = Modifier.size(18.dp))
                     }
                     IconButton(onClick = onShare, modifier = Modifier.size(32.dp)) {
-                        Icon(imageVector = Icons.Outlined.Share, contentDescription = "Share", tint = TextMuted, modifier = Modifier.size(18.dp))
+                        Icon(imageVector = Icons.Outlined.Share, contentDescription = "مشاركة", tint = TextMuted, modifier = Modifier.size(18.dp))
                     }
                     IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
+                            contentDescription = "المفضلة",
                             tint = if (isFavorite) AccentGold else TextMuted,
                             modifier = Modifier.size(18.dp)
                         )
@@ -241,7 +241,7 @@ fun DuaaCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = duaa.titleEn,
+                text = duaa.titleAr,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = PureWhite
             )
@@ -259,27 +259,9 @@ fun DuaaCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // TRANSLITERATION
-            Text(
-                text = duaa.transliteration,
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
-                color = TextMuted
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // ENGLISH TRANSLATION
-            Text(
-                text = duaa.translation,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
-                color = TextSecondary
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
             // REFERENCE CITATION
             Text(
-                text = duaa.reference,
+                text = "المصدر: ${duaa.reference}",
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted
             )

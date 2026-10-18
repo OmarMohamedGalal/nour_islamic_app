@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
@@ -27,13 +26,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.PrayerItem
 import com.example.data.model.PrayerType
+import com.example.ui.NoorDestination
 import com.example.ui.NoorUiState
 import com.example.ui.NoorViewModel
 import com.example.ui.theme.*
 import kotlinx.coroutines.delay
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+private fun formatTimeArabic(time: LocalTime): String {
+    val h = time.hour
+    val m = time.minute
+    val period = if (h < 12) "ص" else "م"
+    val displayH = when {
+        h == 0 -> 12
+        h > 12 -> h - 12
+        else -> h
+    }
+    return String.format(Locale.ENGLISH, "%02d:%02d %s", displayH, m, period)
+}
 
 @Composable
 fun PrayerScreen(
@@ -59,7 +70,7 @@ fun PrayerScreen(
     val hours = remainingSeconds / 3600
     val minutes = (remainingSeconds % 3600) / 60
     val seconds = remainingSeconds % 60
-    val countdownFormatted = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    val countdownFormatted = String.format(Locale.ENGLISH, "%02d:%02d:%02d", hours, minutes, seconds)
 
     LazyColumn(
         modifier = modifier
@@ -69,64 +80,96 @@ fun PrayerScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // TOP HEADER: App Title & City Selector Pill
+        // TOP HEADER: App Title & Navigation shortcuts
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                        text = "NOOR",
+                        text = "نُور",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = NotoSansArabicFontFamily
                         ),
                         color = PureWhite
                     )
                     Text(
-                        text = uiState.hijriDate.formatEn(),
+                        text = uiState.hijriDate.formatAr(),
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted
                     )
                 }
 
-                // City Selector Pill - Frosted Glass Capsule
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(GlassDarkBase)
-                        .background(GlassGradientCard)
-                        .border(1.dp, GlassBorderBrush, RoundedCornerShape(20.dp))
-                        .clickable { viewModel.setShowCityDialog(true) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                        .testTag("city_selector_pill"),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    // Widgets Button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(GlassDarkBase)
+                            .background(GlassGradientCard)
+                            .border(1.dp, GlassBorderBrushHighlight, RoundedCornerShape(20.dp))
+                            .clickable { viewModel.setDestination(NoorDestination.WIDGETS) }
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                            .testTag("top_widgets_button"),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocationOn,
-                            contentDescription = "Location",
-                            tint = PureWhite,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = uiState.currentCity.nameEn,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = PureWhite
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Widgets,
+                                contentDescription = "الودجات",
+                                tint = AccentGold,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "الودجات",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = PureWhite
+                            )
+                        }
+                    }
+
+                    // Settings Button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(GlassDarkBase)
+                            .background(GlassGradientCard)
+                            .border(1.dp, GlassBorderBrush, RoundedCornerShape(20.dp))
+                            .clickable { viewModel.setDestination(NoorDestination.SETTINGS) }
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                            .testTag("top_settings_button"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "الإعدادات",
+                                tint = PureWhite,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "الإعدادات",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = PureWhite
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // HERO COUNTDOWN CARD - Glassmorphic Hero with White-Black Ambient Glow
+        // HERO COUNTDOWN CARD
         item {
             Box(
                 modifier = Modifier
@@ -155,9 +198,8 @@ fun PrayerScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "UPCOMING: ${nextPrayer?.type?.displayNameEn?.uppercase() ?: "PRAYER"} • ${nextPrayer?.type?.displayNameAr ?: ""}",
+                            text = "الصلاة القادمة: ${nextPrayer?.type?.displayNameAr ?: "الصلاة"}",
                             style = MaterialTheme.typography.labelMedium.copy(
-                                letterSpacing = 1.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                             color = TextSecondary
@@ -169,7 +211,7 @@ fun PrayerScreen(
                     Text(
                         text = countdownFormatted,
                         style = MaterialTheme.typography.displayLarge.copy(
-                            fontWeight = FontWeight.Black,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = (-1).sp
                         ),
                         color = PureWhite
@@ -177,17 +219,17 @@ fun PrayerScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
-                    val prayerTimeStr = nextPrayer?.time?.format(timeFormatter) ?: "--:--"
+                    val prayerTimeStr = if (nextPrayer != null) formatTimeArabic(nextPrayer.time) else "--:--"
+                    val cityName = uiState.currentCity.nameAr.ifEmpty { uiState.currentCity.nameEn }
                     Text(
-                        text = "at $prayerTimeStr in ${uiState.currentCity.nameEn}",
+                        text = "الساعة $prayerTimeStr في $cityName",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextMuted
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Prayer Streak Indicators - Glass Capsule
+                    // Prayer Streak Indicators
                     val log = uiState.todayPrayerLog
                     val prayersDone = listOf(log.fajr, log.dhuhr, log.asr, log.maghrib, log.isha).count { it }
 
@@ -204,13 +246,13 @@ fun PrayerScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.LocalFireDepartment,
-                                contentDescription = "Streak",
-                                tint = PureWhite,
+                                contentDescription = "السلسلة",
+                                tint = AccentGold,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Today's Prayers: $prayersDone/5",
+                                text = "صلوات اليوم المكتملة: $prayersDone من ٥",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = PureWhite
                             )
@@ -218,15 +260,15 @@ fun PrayerScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf(
-                                "F" to log.fajr,
-                                "D" to log.dhuhr,
-                                "A" to log.asr,
-                                "M" to log.maghrib,
-                                "I" to log.isha
+                                "ف" to log.fajr,
+                                "ظ" to log.dhuhr,
+                                "ع" to log.asr,
+                                "م" to log.maghrib,
+                                "عش" to log.isha
                             ).forEach { (label, done) ->
                                 Box(
                                     modifier = Modifier
-                                        .size(22.dp)
+                                        .size(24.dp)
                                         .clip(CircleShape)
                                         .background(if (done) WhiteSilverGradient else SolidColor(Color(0x22FFFFFF)))
                                         .border(
@@ -238,7 +280,7 @@ fun PrayerScreen(
                                 ) {
                                     Text(
                                         text = label,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                         color = if (done) VoidBlack else TextMuted
                                     )
                                 }
@@ -253,9 +295,9 @@ fun PrayerScreen(
         if (schedule != null) {
             item {
                 Text(
-                    text = "DAILY SCHEDULE",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold),
-                    color = TextMuted,
+                    text = "جدول الصلوات اليومية",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = TextSecondary,
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                 )
             }
@@ -299,7 +341,7 @@ fun PrayerScreen(
                 )
             }
 
-            // NIGHT PRAYERS / TAHAJJUD CARD - Frosted Glass
+            // NIGHT PRAYERS / TAHAJJUD CARD
             item {
                 Box(
                     modifier = Modifier
@@ -317,16 +359,15 @@ fun PrayerScreen(
                         horizontalArrangement = Arrangement.SpaceAround,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val fmt = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "ISLAMIC MIDNIGHT",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+                                text = "منتصف الليل الشرعي",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = schedule.midnight.format(fmt),
+                                text = formatTimeArabic(schedule.midnight),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = PureWhite
                             )
@@ -341,13 +382,13 @@ fun PrayerScreen(
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "LAST THIRD (TAHAJJUD)",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+                                text = "الثلث الأخير (التهجد)",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = schedule.lastThird.format(fmt),
+                                text = formatTimeArabic(schedule.lastThird),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = PureWhite
                             )
@@ -377,8 +418,7 @@ fun PrayerRowCard(
     onToggleDone: () -> Unit,
     onToggleNotification: () -> Unit
 ) {
-    val fmt = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
-    val formattedTime = prayerItem.time.format(fmt)
+    val formattedTime = formatTimeArabic(prayerItem.time)
 
     val contentColor = if (isNext) VoidBlack else PureWhite
     val secondaryColor = if (isNext) Color(0xFF444444) else TextMuted
@@ -434,7 +474,7 @@ fun PrayerRowCard(
                         if (isDone) {
                             Icon(
                                 imageVector = Icons.Filled.Check,
-                                contentDescription = "Done",
+                                contentDescription = "تمت الصلاة",
                                 tint = if (isNext) PureWhite else VoidBlack,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -448,15 +488,9 @@ fun PrayerRowCard(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = prayerItem.type.displayNameEn,
+                            text = prayerItem.type.displayNameAr,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = contentColor
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = prayerItem.type.displayNameAr,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = secondaryColor
                         )
                     }
                     if (isNext) {
@@ -465,14 +499,13 @@ fun PrayerRowCard(
                                 .padding(top = 2.dp)
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(VoidBlack)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "NEXT PRAYER",
+                                text = "الصلاة القادمة",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 9.sp,
-                                    letterSpacing = 0.5.sp
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
                                 ),
                                 color = PureWhite
                             )
@@ -485,23 +518,24 @@ fun PrayerRowCard(
                 Text(
                     text = formattedTime,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
+                        fontWeight = FontWeight.Bold
                     ),
                     color = contentColor
                 )
 
                 if (prayerItem.type != PrayerType.SUNRISE) {
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     IconButton(
                         onClick = onToggleNotification,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier
+                            .size(40.dp)
+                            .testTag("toggle_notification_${prayerItem.type.name.lowercase()}")
                     ) {
                         Icon(
                             imageVector = if (isNotificationEnabled) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsOff,
-                            contentDescription = "Notification",
+                            contentDescription = if (isNotificationEnabled) "تعطيل تنبيه صلاة ${prayerItem.type.displayNameAr}" else "تفعيل تنبيه صلاة ${prayerItem.type.displayNameAr}",
                             tint = if (isNotificationEnabled) contentColor else secondaryColor,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -523,7 +557,7 @@ fun CitySelectionDialog(
             .border(1.dp, GlassBorderBrush, RoundedCornerShape(28.dp)),
         title = {
             Text(
-                text = "Select City",
+                text = "اختيار المدينة",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = PureWhite
             )
@@ -563,21 +597,23 @@ fun CitySelectionDialog(
                         ) {
                             Column {
                                 Text(
-                                    text = city.nameEn,
+                                    text = city.nameAr.ifEmpty { city.nameEn },
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                     color = if (isSelected) VoidBlack else PureWhite
                                 )
                                 Text(
-                                    text = "${city.countryEn} • ${city.defaultMethod.titleEn}",
+                                    text = "${city.countryAr.ifEmpty { city.countryEn }} • ${city.defaultMethod.titleAr}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isSelected) Color(0xFF444444) else TextMuted
                                 )
                             }
-                            Text(
-                                text = city.nameAr,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isSelected) VoidBlack else TextSecondary
-                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = null,
+                                    tint = if (isSelected) VoidBlack else AccentGold
+                                )
+                            }
                         }
                     }
                 }
@@ -585,7 +621,7 @@ fun CitySelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = PureWhite)
+                Text("إغلاق", color = PureWhite, fontWeight = FontWeight.Bold)
             }
         }
     )

@@ -61,7 +61,10 @@ object AdhanAlarmScheduler {
                     )
 
                     for ((type, time, isEnabled) in prayerEntries) {
-                        if (!isEnabled) continue
+                        if (!isEnabled) {
+                            cancelPrayerAlarms(context, type)
+                            continue
+                        }
                         val prayerDateTime = LocalDateTime.of(date, time)
                         if (prayerDateTime.isAfter(now)) {
                             val triggerEpochMillis = prayerDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -79,6 +82,29 @@ object AdhanAlarmScheduler {
             } catch (e: Exception) {
                 Log.e("AdhanScheduler", "Error scheduling alarms", e)
             }
+        }
+    }
+
+    fun cancelPrayerAlarms(context: Context, prayerType: PrayerType) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+            val intent = Intent(context, AdhanAlarmReceiver::class.java)
+            // Cancel all potential 24 hours slots for this prayer type
+            for (h in 0..23) {
+                val requestCode = prayerType.ordinal * 100 + h
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+                if (pendingIntent != null) {
+                    alarmManager.cancel(pendingIntent)
+                    pendingIntent.cancel()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AdhanScheduler", "Error cancelling alarm for $prayerType", e)
         }
     }
 

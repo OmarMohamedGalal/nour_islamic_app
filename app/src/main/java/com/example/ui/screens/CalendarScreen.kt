@@ -41,7 +41,7 @@ fun CalendarScreen(
     val ramadan = uiState.ramadanStatus
     val holidays = uiState.upcomingHolidays
 
-    val gregorianFmt = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.ENGLISH)
+    val gregorianFmt = DateTimeFormatter.ofPattern("EEEE، d MMMM yyyy", Locale("ar"))
     val formattedGregorian = LocalDate.now().format(gregorianFmt)
 
     LazyColumn(
@@ -60,8 +60,8 @@ fun CalendarScreen(
                     .padding(vertical = 8.dp)
             ) {
                 Text(
-                    text = "HIJRI CALENDAR & OCCASIONS",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    text = "التقويم والمناسبات الإسلامية",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                     color = TextMuted
                 )
                 Text(
@@ -101,15 +101,9 @@ fun CalendarScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "${hijri.monthNameEn} ${hijri.year} AH",
+                        text = "${hijri.monthNameAr} ${hijri.year} هـ",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = PureWhite
-                    )
-
-                    Text(
-                        text = "${hijri.monthNameAr} ${hijri.year} هـ",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = TextSecondary
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -168,12 +162,12 @@ fun CalendarScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "REGIONAL CALENDAR ADJUSTMENT",
+                                    text = "تعديل التقويم الهجري",
                                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.Bold),
                                     color = TextMuted
                                 )
                                 Text(
-                                    text = "تعديل الرؤية الشرعية المحلية",
+                                    text = "معايرة الرؤية الشرعية المحلية",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = PureWhite
                                 )
@@ -187,7 +181,7 @@ fun CalendarScreen(
                             border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
                         ) {
                             Text(
-                                text = if (uiState.hijriAdjustmentDays > 0) "+${uiState.hijriAdjustmentDays}d" else "${uiState.hijriAdjustmentDays}d",
+                                text = if (uiState.hijriAdjustmentDays > 0) "+${uiState.hijriAdjustmentDays} يوم" else "${uiState.hijriAdjustmentDays} يوم",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = if (uiState.hijriAdjustmentDays == -2) VoidBlack else PureWhite,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -198,7 +192,7 @@ fun CalendarScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "Calibrated to ${hijri.day} ${hijri.monthNameEn} (offset: ${if (uiState.hijriAdjustmentDays > 0) "+${uiState.hijriAdjustmentDays}" else "${uiState.hijriAdjustmentDays}"} days) according to your local region's crescent moon sighting.",
+                        text = "معاير وفق رؤية الهلال: ${hijri.day} ${hijri.monthNameAr} (الفارق: ${if (uiState.hijriAdjustmentDays > 0) "+${uiState.hijriAdjustmentDays}" else "${uiState.hijriAdjustmentDays}"} يوم) حسب بلدك ومنطقتك.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -211,7 +205,7 @@ fun CalendarScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val offsets = listOf(-2 to "-2d", -1 to "-1d", 0 to "0d", 1 to "+1d", 2 to "+2d")
+                        val offsets = listOf(-2 to "-٢ يوم", -1 to "-١ يوم", 0 to "٠ يوم", 1 to "+١ يوم", 2 to "+٢ يوم")
                         offsets.forEach { (offset, label) ->
                             val isSelected = uiState.hijriAdjustmentDays == offset
                             Surface(
@@ -244,7 +238,7 @@ fun CalendarScreen(
                                     )
                                     if (offset == -2) {
                                         Text(
-                                            text = "Region",
+                                            text = "محلي",
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                             color = if (isSelected) VoidBlack else TextMuted
                                         )
@@ -287,14 +281,14 @@ fun CalendarScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (ramadan.isRamadan) "RAMADAN DAY ${ramadan.currentDayOfRamadan}" else "RAMADAN COUNTDOWN",
+                                    text = if (ramadan.isRamadan) "اليوم ${ramadan.currentDayOfRamadan} من شهر رمضان" else "العد التنازلي لشهر رمضان",
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
                                     color = PureWhite
                                 )
                             }
 
                             Text(
-                                text = if (ramadan.isRamadan) "${ramadan.daysUntilEid} days to Eid" else "${ramadan.daysUntilRamadan} days left",
+                                text = if (ramadan.isRamadan) "${ramadan.daysUntilEid} يوم حتى عيد الفطر" else "${ramadan.daysUntilRamadan} يوم متبقٍ",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = TextSecondary
                             )
@@ -307,11 +301,11 @@ fun CalendarScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text(text = "SUHOOR / FAJR", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Text(text = "الإمساك والفجر", style = MaterialTheme.typography.labelSmall, color = TextMuted)
                                 Text(text = ramadan.suhoorDeadline, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = PureWhite)
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(text = "IFTAR / MAGHRIB", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Text(text = "الإفطار والمغرب", style = MaterialTheme.typography.labelSmall, color = TextMuted)
                                 Text(text = ramadan.iftarTime, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = PureWhite)
                             }
                         }
@@ -341,8 +335,8 @@ fun CalendarScreen(
         // UPCOMING HOLIDAYS LIST
         item {
             Text(
-                text = "UPCOMING ISLAMIC OCCASIONS",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold),
+                text = "المناسبات والأعياد الإسلامية القادمة",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.Bold),
                 color = TextMuted,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
             )
@@ -394,17 +388,13 @@ fun HolidayItemCard(holidayItem: UpcomingHolidayItem) {
 
                 Column {
                     Text(
-                        text = h.nameEn,
+                        text = h.nameAr,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = PureWhite
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = h.nameAr,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextMuted
-                    )
-                    Text(
-                        text = h.descriptionEn,
+                        text = h.descriptionAr,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -417,7 +407,7 @@ fun HolidayItemCard(holidayItem: UpcomingHolidayItem) {
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Text(
-                    text = if (holidayItem.daysRemaining == 0L) "TODAY" else "in ${holidayItem.daysRemaining}d",
+                    text = if (holidayItem.daysRemaining == 0L) "اليوم" else "خلال ${holidayItem.daysRemaining} يوم",
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = if (isSoon) VoidBlack else TextSecondary,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)

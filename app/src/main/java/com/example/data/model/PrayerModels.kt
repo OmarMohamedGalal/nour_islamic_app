@@ -22,7 +22,7 @@ enum class NotificationSoundOption(
 ) {
     CALM_PRAYER(
         id = "calm_prayer",
-        titleAr = "محمد م. جويدة «اقتربت صلاة...»",
+        titleAr = "محمد م. جويدة «صلاة...»",
         titleEn = "Muhammad M. Gowaida Voice Alert",
         descriptionAr = "تسجيل هادئ بصوت محمد م. جويدة لجميع الصلوات (الفجر، الظهر، العصر، المغرب، العشاء، والجمعة)",
         descriptionEn = "Calm voice notification by Muhammad M. Gowaida for all prayers (Fajr, Dhuhr, Asr, Maghrib, Isha, and Friday Jumu'ah)"

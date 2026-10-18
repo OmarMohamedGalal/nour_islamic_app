@@ -15,6 +15,21 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
 
         Log.d("AdhanAlarmReceiver", "Received alarm for prayer: $prayerName")
 
+        val prefs = context.getSharedPreferences("noor_prefs", Context.MODE_PRIVATE)
+        val isPrayerEnabled = when (prayerName.lowercase()) {
+            "fajr" -> prefs.getBoolean("pref_notif_fajr", true)
+            "dhuhr", "jumu'ah" -> prefs.getBoolean("pref_notif_dhuhr", true)
+            "asr" -> prefs.getBoolean("pref_notif_asr", true)
+            "maghrib" -> prefs.getBoolean("pref_notif_maghrib", true)
+            "isha" -> prefs.getBoolean("pref_notif_isha", true)
+            else -> true
+        }
+
+        if (!isPrayerEnabled) {
+            Log.d("AdhanAlarmReceiver", "Prayer notification for $prayerName is muted. Suppressing.")
+            return
+        }
+
         NotificationHelper.showPrayerNotification(
             context = context,
             prayerName = prayerName,

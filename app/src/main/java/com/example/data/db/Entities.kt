@@ -57,6 +57,8 @@ data class UserSettingsEntity(
     val calculationMethodId: String = "umm_al_qura",
     val madhabId: String = "standard",
     val language: String = "en", // "en" or "ar"
+    val themePalette: String = "luxury_islamic", // "luxury_islamic" or "classic_monochrome"
+    val themeMode: String = "dark", // "dark", "light", "system"
     val fajrNotification: Boolean = true,
     val dhuhrNotification: Boolean = true,
     val asrNotification: Boolean = true,
@@ -64,5 +66,5 @@ data class UserSettingsEntity(
     val ishaNotification: Boolean = true,
     val adhanSound: String = "athan", // "athan", "takbeer", "soft", "silent"
     val hijriAdjustmentDays: Int = -2,
-    val quranReciterId: String = "alafasy"
+    val quranReciterId: String = "islam_sobhy"
 )

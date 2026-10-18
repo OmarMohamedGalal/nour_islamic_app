@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,6 +18,9 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -33,6 +37,7 @@ import com.example.data.model.Madhab
 import com.example.data.model.NotificationSoundOption
 import com.example.data.model.PrayerType
 import com.example.data.model.QuranReciter
+import com.example.ui.NoorDestination
 import com.example.ui.NoorUiState
 import com.example.ui.NoorViewModel
 import com.example.ui.components.ReciterSelectionDialog
@@ -45,6 +50,11 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    // Intercept swipe/back gesture on Settings page to navigate to Prayer/Home without closing the app
+    androidx.activity.compose.BackHandler {
+        viewModel.setDestination(NoorDestination.PRAYER)
+    }
 
     LazyColumn(
         modifier = modifier
@@ -62,8 +72,8 @@ fun SettingsScreen(
                     .padding(vertical = 8.dp)
             ) {
                 Text(
-                    text = "PREFERENCES & ACCURACY",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    text = "التفضيلات والحساب الفلكي",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                     color = TextMuted
                 )
                 Text(
@@ -77,7 +87,7 @@ fun SettingsScreen(
         // LOCATION & CALCULATION METHOD
         item {
             Text(
-                text = "CALCULATION PARAMETERS",
+                text = "معايير الحساب الفلكي",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.Bold),
                 color = TextMuted
             )
@@ -95,8 +105,8 @@ fun SettingsScreen(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // City item
                     SettingsRow(
-                        title = "Location & City",
-                        subtitle = "${uiState.currentCity.nameEn} (${uiState.currentCity.countryEn})",
+                        title = "الموقع والمدينة",
+                        subtitle = "${uiState.currentCity.nameAr.ifEmpty { uiState.currentCity.nameEn }} (${uiState.currentCity.countryAr.ifEmpty { uiState.currentCity.countryEn }}) - انقر لتغيير المدينة",
                         icon = Icons.Outlined.LocationOn,
                         onClick = { viewModel.setShowCityDialog(true) }
                     )
@@ -105,8 +115,8 @@ fun SettingsScreen(
 
                     // Calculation Method item
                     SettingsRow(
-                        title = "Calculation Authority",
-                        subtitle = uiState.calculationMethod.titleEn,
+                        title = "طريقة الحساب الفلكي",
+                        subtitle = uiState.calculationMethod.titleAr,
                         icon = Icons.Outlined.Calculate,
                         onClick = { viewModel.setShowCalculationMethodDialog(true) }
                     )
@@ -115,8 +125,8 @@ fun SettingsScreen(
 
                     // Madhab item
                     SettingsRow(
-                        title = "Asr Juristic Madhab",
-                        subtitle = "${uiState.madhab.titleEn} (${if (uiState.madhab == Madhab.STANDARD) "Shafi'i, Maliki, Hanbali" else "Hanafi double shadow"})",
+                        title = "المذهب الفقهي لصلاة العصر",
+                        subtitle = uiState.madhab.titleAr,
                         icon = Icons.Outlined.Balance,
                         onClick = {
                             val next = if (uiState.madhab == Madhab.STANDARD) Madhab.HANAFI else Madhab.STANDARD
@@ -130,8 +140,8 @@ fun SettingsScreen(
                     val adj = uiState.hijriAdjustmentDays
                     val adjDisplay = if (adj > 0) "+${adj}" else "$adj"
                     SettingsRow(
-                        title = "Hijri Date Adjustment",
-                        subtitle = "$adjDisplay Days (Moonsighting offset: Today is ${uiState.hijriDate.day} ${uiState.hijriDate.monthNameEn})",
+                        title = "تعديل التقويم الهجري",
+                        subtitle = "$adjDisplay يوم (معايرة رؤية الهلال: اليوم ${uiState.hijriDate.day} ${uiState.hijriDate.monthNameAr})",
                         icon = Icons.Outlined.CalendarMonth,
                         onClick = {
                             // Cycle through -2 (User's region), -1, 0 (Standard), +1, +2
@@ -153,7 +163,7 @@ fun SettingsScreen(
         // QURAN RECITATION & RECITER SELECTION
         item {
             Text(
-                text = "QURAN RECITATION • تلاوة القرآن",
+                text = "تلاوة القرآن الكريم",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.Bold),
                 color = TextMuted
             )
@@ -170,8 +180,8 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     SettingsRow(
-                        title = "Quran Reciter • القارئ المفضل",
-                        subtitle = "${uiState.selectedReciter.nameAr} (${uiState.selectedReciter.nameEn})",
+                        title = "القارئ المفضل",
+                        subtitle = uiState.selectedReciter.nameAr,
                         icon = Icons.Filled.RecordVoiceOver,
                         onClick = { viewModel.setShowReciterDialog(true) }
                     )
@@ -495,7 +505,7 @@ fun SettingsScreen(
         // HOME SCREEN WIDGETS SECTION
         item {
             Text(
-                text = "HOME SCREEN WIDGETS",
+                text = "HOME SCREEN WIDGETS • ودجات الشاشة الرئيسية",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontWeight = FontWeight.Bold),
                 color = TextMuted
             )
@@ -508,112 +518,106 @@ fun SettingsScreen(
                     .clip(RoundedCornerShape(22.dp))
                     .background(GlassDarkBase)
                     .background(GlassGradientCard)
-                    .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(22.dp))
-                    .padding(18.dp)
+                    .border(1.dp, GlassBorderBrushHighlight, RoundedCornerShape(22.dp))
+                    .padding(20.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(
-                                text = "Active Widgets (${14})",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = PureWhite
-                            )
-                            Text(
-                                text = "Auto-refreshes on prayer times & periodic intervals",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0x25D4AF37)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Widgets,
+                                    contentDescription = null,
+                                    tint = AccentGold,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "تخصيص وإضافة الودجات (١٧ ودجت)",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = PureWhite
+                                )
+                                Text(
+                                    text = "التقويم، مواقيت الصلاة، القرآن، الأذكار، القبلة",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    val widgetsList = listOf(
-                        Triple(
-                            "Horizontal Prayer Bar",
-                            "Fajr, Dhuhr, Asr, Maghrib, Isha in a slim pill",
-                            com.example.widget.PrayerBarWidgetProvider::class.java
-                        ),
-                        Triple(
-                            "Quran Verse of the Day",
-                            "Inspiring ayah (tap cycles to next verse)",
-                            com.example.widget.QuranVerseWidgetProvider::class.java
-                        ),
-                        Triple(
-                            "Compact Prayer Times",
-                            "Vertical list with active prayer highlight",
-                            com.example.widget.PrayerListWidgetProvider::class.java
-                        ),
-                        Triple(
-                            "Next Prayer Arabic Banner",
-                            "Large time, countdown, and Arabic title",
-                            com.example.widget.NextPrayerArabicWidgetProvider::class.java
-                        )
+                    Text(
+                        text = "يمكنك تخصيص الخطوط العربية الأصيلة (تليد، ديما، الثلث..)، ونمط الخلفية والزخرفة مع لوحة ألوان مخصصة لكل ودجت بشكل مستقل.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
                     )
-
-                    widgetsList.forEachIndexed { idx, (name, desc, providerClass) ->
-                        if (idx > 0) {
-                            HorizontalDivider(color = GlassBorderColorSubtle, modifier = Modifier.padding(vertical = 10.dp))
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = PureWhite
-                                )
-                                Text(
-                                    text = desc,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextMuted
-                                )
-                            }
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                val appWidgetManager = context.getSystemService(android.appwidget.AppWidgetManager::class.java)
-                                if (appWidgetManager?.isRequestPinAppWidgetSupported == true) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(Color(0x18FFFFFF))
-                                            .border(1.dp, GlassBorderBrushSubtle, RoundedCornerShape(10.dp))
-                                            .clickable {
-                                                val component = android.content.ComponentName(context, providerClass)
-                                                appWidgetManager.requestPinAppWidget(component, null, null)
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                                    ) {
-                                        Text("Pin", style = MaterialTheme.typography.labelSmall, color = PureWhite)
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            com.example.widget.WidgetUpdater.updateAllWidgets(context)
-                            com.example.widget.WidgetUpdater.schedulePeriodicUpdates(context)
-                        },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PureWhite, contentColor = VoidBlack)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Refresh All Widgets Now", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { viewModel.setDestination(NoorDestination.WIDGETS) },
+                            modifier = Modifier.weight(1.2f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AccentGold,
+                                contentColor = VoidBlack
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Palette,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = VoidBlack
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "فتح معرض الودجات",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = VoidBlack
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                com.example.widget.WidgetUpdater.updateAllWidgets(context)
+                                Toast.makeText(context, "تم تحديث جميع الودجات بنجاح", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = PureWhite),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderBrushHighlight),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = PureWhite
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "تحديث الكل",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = PureWhite
+                            )
+                        }
                     }
                 }
             }
@@ -639,14 +643,19 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(54.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0xFF080B0F))
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
+                                        listOf(Color(0xFF1E2838), Color(0xFF0D131D))
+                                    )
+                                )
                                 .border(1.dp, GlassBorderBrushHighlight, RoundedCornerShape(14.dp)),
                             contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.mipmap.ic_launcher),
-                                contentDescription = "Noor App Icon",
-                                modifier = Modifier.size(46.dp)
+                         ) {
+                            Icon(
+                                imageVector = Icons.Filled.DarkMode,
+                                contentDescription = "Noor App Emblem",
+                                tint = AccentGold,
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -829,7 +838,7 @@ fun NotificationToggleRow(
         Text(text = title, style = MaterialTheme.typography.bodyLarge, color = PureWhite)
         Switch(
             checked = isEnabled,
-            onCheckedChange = { onToggle() },
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = VoidBlack,
                 checkedTrackColor = PureWhite,

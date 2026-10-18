@@ -14,11 +14,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.QuranReciter
+import com.example.ui.components.glass.LiquidGlassSecondaryButton
 import com.example.ui.theme.*
 
 @Composable
@@ -27,18 +29,32 @@ fun ReciterSelectionDialog(
     onSelectReciter: (QuranReciter) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dialogShape = RoundedCornerShape(28.dp)
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SurfaceCardHigh,
+        containerColor = LiquidGlassSurfaceElevated,
+        modifier = Modifier
+            .clip(dialogShape)
+            .border(1.dp, LiquidGlassBorderSpecular, dialogShape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.RecordVoiceOver,
-                    contentDescription = null,
-                    tint = PureWhite,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0x18FFFFFF))
+                        .border(1.dp, LiquidGlassBorderSubtle, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.RecordVoiceOver,
+                        contentDescription = null,
+                        tint = LiquidCyanGlow,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = "اختيار قارئ القرآن",
@@ -61,7 +77,7 @@ fun ReciterSelectionDialog(
                 items(QuranReciter.entries.size) { i ->
                     val reciter = QuranReciter.entries[i]
                     val isSelected = reciter == selectedReciter
-                    val shape = RoundedCornerShape(14.dp)
+                    val shape = RoundedCornerShape(16.dp)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -69,12 +85,17 @@ fun ReciterSelectionDialog(
                             .then(
                                 if (isSelected) {
                                     Modifier
-                                        .background(WhiteSilverGradient)
-                                        .border(1.dp, PureWhite, shape)
+                                        .background(LiquidGlassButtonActiveGradient)
+                                        .border(
+                                            1.dp,
+                                            Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0x90A0D0FF))),
+                                            shape
+                                        )
                                 } else {
                                     Modifier
-                                        .background(GlassDarkBase)
-                                        .border(1.dp, GlassBorderBrushSubtle, shape)
+                                        .background(LiquidGlassSurfaceBase)
+                                        .background(LiquidGlassSurfaceGradient)
+                                        .border(1.dp, LiquidGlassBorderSubtle, shape)
                                 }
                             )
                             .clickable { onSelectReciter(reciter) }
@@ -129,9 +150,10 @@ fun ReciterSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close • إغلاق", color = PureWhite)
-            }
+            LiquidGlassSecondaryButton(
+                text = "Close • إغلاق",
+                onClick = onDismiss
+            )
         }
     )
 }
